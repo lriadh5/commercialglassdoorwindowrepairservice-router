@@ -1,6 +1,16 @@
 import { useState, useEffect } from "react";
 import { Routes, Route, Link, useNavigate, useParams, useLocation } from "react-router-dom";
-import generatedPages from "./data/generated-pages.json";
+
+// Each SEO pipeline page is its own file (src/data/pages/<slug>.json), so
+// publishing a page is always a single-file create-or-update — no
+// read-modify-write merge logic needed anywhere, in Make or here.
+const pageModules = import.meta.glob("./data/pages/*.json", { eager: true });
+const generatedPages = Object.fromEntries(
+  Object.entries(pageModules).map(([path, mod]) => [
+    path.match(/([^/]+)\.json$/)[1],
+    mod.default || mod,
+  ])
+);
 
 // Convert an internal page object ({ type, key }) to a real URL path.
 function pageToPath(page) {
