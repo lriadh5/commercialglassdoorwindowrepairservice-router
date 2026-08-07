@@ -12,6 +12,25 @@ const generatedPages = Object.fromEntries(
   ])
 );
 
+// Cross-link index: groups every generated page by its `service` / `city`
+// key so ServicePage/CityPage can link out to relevant SEO pages, and
+// GeneratedPage can link back, with zero manual wiring per page. A page
+// only participates once its JSON carries a `service` and/or `city` value
+// matching a real key in COMMERCIAL_SERVICES/RESIDENTIAL_SERVICES/CITIES
+// below — anything else (typo, missing field) is silently excluded rather
+// than producing a broken link.
+function buildGeneratedIndex(field) {
+  const index = {};
+  for (const [slug, entry] of Object.entries(generatedPages)) {
+    const value = entry[field];
+    if (!value) continue;
+    (index[value] ??= []).push({ slug, title: entry.title || slug });
+  }
+  return index;
+}
+const generatedByService = buildGeneratedIndex("service");
+const generatedByCity = buildGeneratedIndex("city");
+
 // Convert an internal page object ({ type, key }) to a real URL path.
 function pageToPath(page) {
   switch (page.type) {
@@ -981,12 +1000,13 @@ function HomePage({ setPage }) {
 
 function ServicePage({ svc, setPage }) {
   const otherServices = ALL_SERVICES.filter(s => s.key !== svc.key).slice(0, 5);
+  const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
   return (
     <>
       <div className="page-hero">
         <div className="container">
           <div className="breadcrumb">
-            <span onClick={() => setPage({ type: "home" })} style={{ cursor: "pointer", color: "rgba(255,255,255,0.7)" }}>Home</span>
+            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
             <span>›</span> Services <span>›</span> {svc.name}
           </div>
           <h1>{svc.name} in Northern Virginia</h1>
@@ -1038,16 +1058,30 @@ function ServicePage({ svc, setPage }) {
               <p>We provide {svc.name.toLowerCase()} throughout Northern Virginia, including:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {CITIES.map(c => (
-                  <span key={c.key} onClick={() => setPage({ type: "city", key: c.key })} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</span>
+                  <Link key={c.key} to={`/city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
+
+              {featuredLocations.length > 0 && (
+                <>
+                  <h2>{svc.name} — Featured Locations</h2>
+                  <p>Read our local guides for {svc.name.toLowerCase()} in these Northern Virginia communities:</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                    {featuredLocations.map(p => (
+                      <Link key={p.slug} to={`/pages/${p.slug}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {p.title} <span style={{ color: "#1E88E5" }}>→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
 
               <h2>Related Services</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {otherServices.map(s => (
-                  <div key={s.key} onClick={() => setPage({ type: "service", key: s.key })} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <Link key={s.key} to={`/service/${s.key}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     {s.name} <span style={{ color: "#1E88E5" }}>→</span>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>
@@ -1068,7 +1102,7 @@ function ServicePage({ svc, setPage }) {
               <div className="sidebar-card" style={{ background: "#1a2332" }}>
                 <h3>Service Areas</h3>
                 <div className="cities-list">
-                  {CITIES.map(c => <a key={c.key} onClick={() => setPage({ type: "city", key: c.key })}>{c.name}</a>)}
+                  {CITIES.map(c => <Link key={c.key} to={`/city/${c.key}`}>{c.name}</Link>)}
                 </div>
               </div>
             </div>
@@ -1090,12 +1124,13 @@ function ServicePage({ svc, setPage }) {
 }
 
 function CityPage({ city, setPage }) {
+  const featuredServices = (generatedByCity[city.key] || []).slice(0, 6);
   return (
     <>
       <div className="page-hero">
         <div className="container">
           <div className="breadcrumb">
-            <span onClick={() => setPage({ type: "home" })} style={{ cursor: "pointer", color: "rgba(255,255,255,0.7)" }}>Home</span>
+            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
             <span>›</span> Service Areas <span>›</span> {city.name}
           </div>
           <h1>Commercial Glass Services in {city.name}</h1>
@@ -1118,10 +1153,10 @@ function CityPage({ city, setPage }) {
 
               <div className="city-services">
                 {COMMERCIAL_SERVICES.map(s => (
-                  <div key={s.key} className="city-service-item" onClick={() => setPage({ type: "service", key: s.key })}>
+                  <Link key={s.key} to={`/service/${s.key}`} className="city-service-item">
                     <h4>{s.name}</h4>
                     <p>Professional service for {city.name} businesses</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
@@ -1129,10 +1164,10 @@ function CityPage({ city, setPage }) {
               <p>We also serve homeowners in {city.name} with window glass repair, replacement, and custom frameless shower doors.</p>
               <div className="city-services">
                 {[...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES].map(s => (
-                  <div key={s.key} className="city-service-item" onClick={() => setPage({ type: "service", key: s.key })}>
+                  <Link key={s.key} to={`/service/${s.key}`} className="city-service-item">
                     <h4>{s.name}</h4>
                     <p>Residential service in {city.name}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
@@ -1146,10 +1181,24 @@ function CityPage({ city, setPage }) {
                 <li>Hundreds of completed jobs in {city.name} and surrounding area</li>
               </ul>
 
+              {featuredServices.length > 0 && (
+                <>
+                  <h2 style={{ marginTop: 32 }}>Featured Services in {city.name}</h2>
+                  <p>Local guides for glass repair services in {city.name}:</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
+                    {featuredServices.map(p => (
+                      <Link key={p.slug} to={`/pages/${p.slug}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {p.title} <span style={{ color: "#1E88E5" }}>→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+
               <h2 style={{ marginTop: 32 }}>Other Service Areas Near {city.name}</h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {CITIES.filter(c => c.key !== city.key).map(c => (
-                  <span key={c.key} onClick={() => setPage({ type: "city", key: c.key })} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</span>
+                  <Link key={c.key} to={`/city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
             </div>
@@ -1169,7 +1218,7 @@ function CityPage({ city, setPage }) {
               <div className="sidebar-card" style={{ background: "#1a2332" }}>
                 <h3>All Service Areas</h3>
                 <div className="cities-list">
-                  {CITIES.map(c => <a key={c.key} onClick={() => setPage({ type: "city", key: c.key })} style={{ background: city.key === c.key ? "rgba(255,215,0,0.3)" : undefined }}>{c.name}</a>)}
+                  {CITIES.map(c => <Link key={c.key} to={`/city/${c.key}`} style={{ background: city.key === c.key ? "rgba(255,215,0,0.3)" : undefined }}>{c.name}</Link>)}
                 </div>
               </div>
             </div>
@@ -1849,18 +1898,29 @@ function GeneratedPageRoute({ setPage }) {
   }, [entry]);
 
   if (!entry) return <HomePage setPage={setPage} />;
-  return <GeneratedPage entry={entry} setPage={setPage} />;
+  return <GeneratedPage entry={entry} slug={slug} setPage={setPage} />;
 }
 
-function GeneratedPage({ entry, setPage }) {
+function GeneratedPage({ entry, slug, setPage }) {
   const { title, intro, sections = [], faq = [], cta, keyword, service, city } = entry;
+  // service/city are canonical keys (see buildGeneratedIndex above) — resolving
+  // them here is what lets every generated page automatically link back to its
+  // real service/city hub with no manual wiring per page.
+  const svc = ALL_SERVICES.find(s => s.key === service);
+  const cityObj = CITIES.find(c => c.key === city);
+  const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
+  const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
+
   return (
     <>
       <div className="page-hero">
         <div className="container">
           <div className="breadcrumb">
-            <span onClick={() => setPage({ type: "home" })} style={{ cursor: "pointer", color: "rgba(255,255,255,0.7)" }}>Home</span>
-            <span>›</span> {title}
+            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
+            <span>›</span>{" "}
+            {svc && <><Link to={`/service/${svc.key}`} style={{ color: "rgba(255,255,255,0.7)" }}>{svc.name}</Link><span>›</span>{" "}</>}
+            {cityObj && <><Link to={`/city/${cityObj.key}`} style={{ color: "rgba(255,255,255,0.7)" }}>{cityObj.name}</Link><span>›</span>{" "}</>}
+            {title}
           </div>
           <h1>{title}</h1>
           {intro && <p>{intro}</p>}
@@ -1888,6 +1948,27 @@ function GeneratedPage({ entry, setPage }) {
                   ))}
                 </>
               )}
+
+              <h2>Related Services &amp; Areas</h2>
+              <p>
+                {svc && <>Learn more about our <Link to={`/service/${svc.key}`}>{svc.name.toLowerCase()}</Link> services. </>}
+                {cityObj && <>See everything we offer throughout <Link to={`/city/${cityObj.key}`}>{cityObj.name}, VA</Link>. </>}
+                {emergencyService && service !== emergencyService.key && <>Need immediate service? Visit our <Link to={`/service/${emergencyService.key}`}>Emergency Commercial Glass Repair</Link> page. </>}
+                Ready to get started? <Link to="/contact">Request a free quote</Link> and we'll get back to you fast.
+              </p>
+
+              {otherLocations.length > 0 && (
+                <>
+                  <h2>More {svc.name} Locations</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {otherLocations.map(p => (
+                      <Link key={p.slug} to={`/pages/${p.slug}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {p.title} <span style={{ color: "#1E88E5" }}>→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="sidebar">
@@ -1901,12 +1982,12 @@ function GeneratedPage({ entry, setPage }) {
                   <li>Serving All of NoVA</li>
                 </ul>
               </div>
-              {(service || city) && (
+              {(svc || cityObj) && (
                 <div className="sidebar-card" style={{ background: "#1a2332" }}>
                   <h3>About This Page</h3>
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
-                    {service && <>Service: {service}<br /></>}
-                    {city && <>Area: {city}</>}
+                    {svc && <>Service: <Link to={`/service/${svc.key}`} style={{ color: "#FFD700" }}>{svc.name}</Link><br /></>}
+                    {cityObj && <>Area: <Link to={`/city/${cityObj.key}`} style={{ color: "#FFD700" }}>{cityObj.name}</Link></>}
                   </p>
                 </div>
               )}
