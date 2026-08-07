@@ -31,6 +31,89 @@ function buildGeneratedIndex(field) {
 const generatedByService = buildGeneratedIndex("service");
 const generatedByCity = buildGeneratedIndex("city");
 
+const SITE = "https://commercialglassdoorwindowrepairservice.com";
+
+function setMetaTag(attr, key, content) {
+  if (!content) return;
+  let tag = document.querySelector(`meta[${attr}="${key}"]`);
+  if (!tag) {
+    tag = document.createElement("meta");
+    tag.setAttribute(attr, key);
+    document.head.appendChild(tag);
+  }
+  tag.setAttribute("content", content);
+}
+
+// Sets per-route <title>, meta description, canonical link, and OG tags.
+// Every route calls this (including Home) so tags left behind by the
+// previous route never linger — there's no SSR here, so this is the only
+// place these tags get updated between client-side navigations.
+function useSEO({ title, description, path, noindex = false }) {
+  useEffect(() => {
+    if (title) document.title = title;
+    setMetaTag("name", "description", description);
+    setMetaTag("name", "robots", noindex ? "noindex, follow" : "index, follow");
+    setMetaTag("property", "og:title", title);
+    setMetaTag("property", "og:description", description);
+    setMetaTag("property", "og:url", path ? `${SITE}${path}` : undefined);
+
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement("link");
+      canonical.setAttribute("rel", "canonical");
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute("href", `${SITE}${path || "/"}`);
+  }, [title, description, path, noindex]);
+}
+
+// Injects one or more JSON-LD <script> tags for the current route and
+// removes them on unmount/change so schema never leaks between pages.
+function useJsonLd(schemas) {
+  useEffect(() => {
+    const list = (Array.isArray(schemas) ? schemas : [schemas]).filter(Boolean);
+    const els = list.map(obj => {
+      const el = document.createElement("script");
+      el.type = "application/ld+json";
+      el.text = JSON.stringify(obj);
+      document.head.appendChild(el);
+      return el;
+    });
+    return () => els.forEach(el => el.remove());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(schemas)]);
+}
+
+function breadcrumbJsonLd(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.label,
+      item: `${SITE}${item.to}`,
+    })),
+  };
+}
+
+// Real, crawlable breadcrumb trail. `items` is [{label, to}], in order,
+// including the current page itself (rendered as plain text, not a link).
+// Flat node list (not nested spans) to match the existing .breadcrumb CSS,
+// which styles direct child spans as separators.
+function Breadcrumbs({ items }) {
+  const nodes = [];
+  items.forEach((item, i) => {
+    if (i === items.length - 1) {
+      nodes.push(item.label);
+    } else {
+      nodes.push(<Link key={item.to} to={item.to} style={{ color: "rgba(255,255,255,0.7)" }}>{item.label}</Link>);
+      nodes.push(<span key={`${item.to}-sep`}> › </span>);
+    }
+  });
+  return <nav className="breadcrumb" aria-label="Breadcrumb">{nodes}</nav>;
+}
+
 // Convert an internal page object ({ type, key }) to a real URL path.
 function pageToPath(page) {
   switch (page.type) {
@@ -143,27 +226,33 @@ const COLORS = {
 };
 
 const CITIES = [
-  { key: "alexandria", name: "Alexandria", county: "Alexandria City", zip: "22301" },
-  { key: "arlington", name: "Arlington", county: "Arlington County", zip: "22201" },
-  { key: "fairfax", name: "Fairfax", county: "Fairfax County", zip: "22030" },
-  { key: "mclean", name: "McLean", county: "Fairfax County", zip: "22101" },
-  { key: "tysons", name: "Tysons", county: "Fairfax County", zip: "22102" },
-  { key: "reston", name: "Reston", county: "Fairfax County", zip: "20190" },
-  { key: "herndon", name: "Herndon", county: "Fairfax County", zip: "20170" },
-  { key: "ashburn", name: "Ashburn", county: "Loudoun County", zip: "20147" },
-  { key: "leesburg", name: "Leesburg", county: "Loudoun County", zip: "20175" },
-  { key: "chantilly", name: "Chantilly", county: "Fairfax County", zip: "20151" },
-  { key: "springfield", name: "Springfield", county: "Fairfax County", zip: "22150" },
-  { key: "burke", name: "Burke", county: "Fairfax County", zip: "22015" },
-  { key: "vienna", name: "Vienna", county: "Fairfax County", zip: "22180" },
-  { key: "annandale", name: "Annandale", county: "Fairfax County", zip: "22003" },
-  { key: "fallschurch", name: "Falls Church", county: "Falls Church City", zip: "22041" },
-  { key: "loudoun", name: "Loudoun County", county: "Loudoun County", zip: "20176" },
-  { key: "fairfaxcounty", name: "Fairfax County", county: "Fairfax County", zip: "22035" },
+  { key: "alexandria", name: "Alexandria", county: "Alexandria City", zip: "22301", state: "VA", blurb: "From the historic storefronts of Old Town to the retail corridors along Route 1, Alexandria's mix of century-old buildings and modern retail space means glass repairs often have to work around both historic-district rules and busy foot traffic." },
+  { key: "arlington", name: "Arlington", county: "Arlington County", zip: "22201", state: "VA", blurb: "Arlington's dense commercial corridors — Rosslyn, Ballston, Clarendon, and Crystal City — are packed with office towers and street-level retail, where storefront glass and office glass partitions see heavy daily use." },
+  { key: "fairfax", name: "Fairfax", county: "Fairfax County", zip: "22030", state: "VA", blurb: "As the seat of Fairfax County, the City of Fairfax has a busy mix of government offices, medical buildings, and retail centers that all depend on secure, presentable commercial glass." },
+  { key: "mclean", name: "McLean", county: "Fairfax County", zip: "22101", state: "VA", blurb: "McLean's corporate office parks and upscale retail along Chain Bridge Road call for clean, precise commercial glass work — from office glass partitions to storefront replacement." },
+  { key: "tysons", name: "Tysons", county: "Fairfax County", zip: "22102", state: "VA", blurb: "Tysons is one of Northern Virginia's largest commercial hubs — high-rise offices, two major malls, and dense retail mean fast turnaround on storefront and commercial glass repairs matters here more than almost anywhere else in the region." },
+  { key: "reston", name: "Reston", county: "Fairfax County", zip: "20190", state: "VA", blurb: "Reston Town Center and the surrounding office and retail districts along the Dulles Toll Road are a major hub for commercial glass, storefront, and office glass work." },
+  { key: "herndon", name: "Herndon", county: "Fairfax County", zip: "20170", state: "VA", blurb: "Herndon's historic downtown and nearby office corridors near Dulles Airport both rely on us for commercial storefront and window repair." },
+  { key: "ashburn", name: "Ashburn", county: "Loudoun County", zip: "20147", state: "VA", blurb: "Ashburn's data centers, office parks, and fast-growing retail centers along the Loudoun County tech corridor keep our commercial glass and storefront teams busy." },
+  { key: "leesburg", name: "Leesburg", county: "Loudoun County", zip: "20175", state: "VA", blurb: "Leesburg's historic downtown storefronts and newer retail development outside the historic district both require glass work that fits the building — old or new." },
+  { key: "chantilly", name: "Chantilly", county: "Fairfax County", zip: "20151", state: "VA", blurb: "Chantilly's mix of office parks, warehouses, and retail near Dulles Airport depend on us for commercial door and storefront glass repair." },
+  { key: "springfield", name: "Springfield", county: "Fairfax County", zip: "22150", state: "VA", blurb: "Springfield's retail centers and office buildings near the Capital Beltway interchange keep commercial glass and storefront doors in constant use." },
+  { key: "burke", name: "Burke", county: "Fairfax County", zip: "22015", state: "VA", blurb: "Burke's neighborhood retail centers and professional offices rely on us for both commercial and residential glass repair." },
+  { key: "vienna", name: "Vienna", county: "Fairfax County", zip: "22180", state: "VA", blurb: "Vienna's Maple Avenue business district and surrounding office parks call us for commercial storefront and door glass repair." },
+  { key: "annandale", name: "Annandale", county: "Fairfax County", zip: "22003", state: "VA", blurb: "Annandale's busy commercial strip along Little River Turnpike is home to a wide mix of retail and restaurant storefronts we service regularly." },
+  { key: "fallschurch", name: "Falls Church", county: "Falls Church City", zip: "22041", state: "VA", blurb: "Falls Church's compact downtown and surrounding commercial corridors mean fast, minimally disruptive storefront glass repair matters to local business owners." },
+  { key: "loudoun", name: "Loudoun County", county: "Loudoun County", zip: "20176", state: "VA", blurb: "Loudoun County's rapid commercial growth — from Ashburn's data center corridor to Leesburg's retail centers — keeps our commercial glass teams active across the county." },
+  { key: "fairfaxcounty", name: "Fairfax County", county: "Fairfax County", zip: "22035", state: "VA", blurb: "As Virginia's most populous county, Fairfax County's office parks, shopping centers, and government buildings make up a large share of our commercial glass repair work." },
+  { key: "centreville", name: "Centreville", county: "Fairfax County", zip: "20120", state: "VA", blurb: "Centreville's retail centers along Route 29 and Braddock Road depend on us for storefront and commercial door glass repair." },
+  { key: "washington-dc", name: "Washington", county: "the District of Columbia", zip: "20001", state: "DC", blurb: "From downtown DC office buildings to retail storefronts near Dupont Circle, Georgetown, and Capitol Hill, commercial glass in the District has to meet strict building and historic-preservation requirements — we work within them." },
+  { key: "bethesda", name: "Bethesda", county: "Montgomery County", zip: "20814", state: "MD", blurb: "Bethesda's dense downtown of office towers, restaurants, and retail along Wisconsin and Woodmont Avenues keeps storefront and commercial glass repair in steady demand." },
+  { key: "silver-spring", name: "Silver Spring", county: "Montgomery County", zip: "20910", state: "MD", blurb: "Silver Spring's revitalized downtown retail district and surrounding office buildings rely on us for commercial storefront and glass door repair." },
+  { key: "rockville", name: "Rockville", county: "Montgomery County", zip: "20850", state: "MD", blurb: "As the county seat of Montgomery County, Rockville's mix of government buildings, office parks, and Rockville Town Square retail depend on prompt commercial glass service." },
+  { key: "gaithersburg", name: "Gaithersburg", county: "Montgomery County", zip: "20877", state: "MD", blurb: "Gaithersburg's biotech and office corridors along I-270, along with its retail centers, make up a growing share of our Maryland commercial glass work." },
 ];
 
 const COMMERCIAL_SERVICES = [
-  { key: "storefront-glass", name: "Storefront Glass Repair", desc: "Fast repair and replacement of broken or damaged commercial storefront glass throughout Northern Virginia." },
+  { key: "storefront-glass", name: "Storefront Glass Repair", desc: "Fast repair and replacement of broken or damaged commercial storefront glass throughout Northern Virginia, Washington DC, and Maryland." },
   { key: "commercial-door", name: "Commercial Door Repair", desc: "All-brands commercial door repair including pivots, closers, hinges, and full door replacement." },
   { key: "emergency-boardup", name: "Emergency Board-Up", desc: "24/7 emergency glass board-up service for broken storefronts, vandalism, and accidents." },
   { key: "aluminum-storefront", name: "Aluminum Storefront Doors", desc: "Installation and repair of aluminum storefront door systems for retail and commercial properties." },
@@ -171,6 +260,11 @@ const COMMERCIAL_SERVICES = [
   { key: "continuous-hinges", name: "Continuous Hinges", desc: "Installation of piano/continuous hinges for high-traffic commercial doors requiring heavy-duty hardware." },
   { key: "glass-walls", name: "Commercial Glass Walls", desc: "Full-height commercial glass wall systems for offices, lobbies, and retail environments." },
   { key: "storefront-door-repair", name: "Storefront Door Repair", desc: "Same-day repair of damaged, misaligned, or broken storefront doors across Northern Virginia." },
+  { key: "commercial-window-replacement", name: "Commercial Window Glass Replacement", desc: "Full-pane commercial window glass replacement for office buildings, retail properties, and multi-tenant commercial spaces." },
+  { key: "office-glass", name: "Office Glass & Partition Repair", desc: "Repair and replacement of interior office glass partitions, glass doors, and conference room glazing." },
+  { key: "tempered-glass", name: "Tempered Glass Repair & Replacement", desc: "Code-compliant tempered safety glass replacement for storefronts, doors, and commercial glazing that requires impact-resistant glass." },
+  { key: "laminated-safety-glass", name: "Laminated Safety Glass Replacement", desc: "Laminated safety glass replacement for storefronts and commercial openings where impact resistance and sound control matter." },
+  { key: "commercial-insulated-glass", name: "Commercial Insulated Glass Replacement", desc: "Replacement of failed or damaged insulated glass units (IGUs) in commercial storefronts, curtain walls, and office buildings." },
 ];
 
 const RESIDENTIAL_SERVICES = [
@@ -396,6 +490,7 @@ const css = `
   .page-hero{background:linear-gradient(135deg,#0F4C81,#1a3a5c);color:#fff;padding:50px 20px;}
   .breadcrumb{font-size:12px;color:rgba(255,255,255,0.6);margin-bottom:12px;}
   .breadcrumb span{color:rgba(255,255,255,0.4);margin:0 6px;}
+  .breadcrumb a:hover{color:#fff;text-decoration:underline;}
   .page-hero h1{font-family:'Barlow Condensed',sans-serif;font-size:clamp(28px,5vw,48px);font-weight:900;text-transform:uppercase;margin-bottom:12px;}
   .page-hero p{color:rgba(255,255,255,0.85);font-size:15px;max-width:600px;line-height:1.6;}
 
@@ -569,7 +664,7 @@ function Header({ setPage, currentPage }) {
     <>
       <div className="topbar">
         <span>🕐 Mon–Sat: 7am–7pm | Emergency: 24/7</span>
-        <span>📍 Serving All of Northern Virginia</span>
+        <span>📍 Serving Northern Virginia, Washington DC &amp; Maryland</span>
       </div>
       <div className="emergency-bar">
         🚨 24/7 Emergency Board-Up — Call Now: <a href={PHONE_HREF}>{PHONE}</a>
@@ -699,9 +794,9 @@ function Footer({ setPage }) {
         <div className="footer-grid">
           <div>
             <div className="footer-logo">{COMPANY}</div>
-            <p className="footer-about">Northern Virginia's trusted commercial and residential glass repair company. Serving Alexandria, Arlington, Fairfax, and all surrounding areas with fast, professional service.</p>
+            <p className="footer-about">Northern Virginia, Washington DC & Maryland's trusted commercial and residential glass repair company. Serving Alexandria, Arlington, Fairfax, Bethesda, DC, and all surrounding areas with fast, professional service.</p>
             <a href={PHONE_HREF} className="footer-phone">{PHONE}</a>
-            <p style={{ fontSize: 12, marginTop: 8, color: "rgba(255,255,255,0.5)" }}>📧 info@commercialglassdoorwindowrepairservices.com<br />📍 Serving All of Northern Virginia</p>
+            <p style={{ fontSize: 12, marginTop: 8, color: "rgba(255,255,255,0.5)" }}>📧 info@commercialglassdoorwindowrepairservices.com<br />📍 Serving Northern Virginia, Washington DC &amp; Maryland</p>
           </div>
           <div className="footer-col">
             <h4>Commercial</h4>
@@ -713,7 +808,7 @@ function Footer({ setPage }) {
             <h4 style={{ marginTop: 16 }}>Shower Doors</h4>
             {SHOWER_SERVICES.map(s => <Link key={s.key} to={`/service/${s.key}`}>{s.name}</Link>)}
           </div>
-          <div className="footer-col">
+          <div className="footer-col" id="service-areas">
             <h4>Service Areas</h4>
             {CITIES.map(c => <Link key={c.key} to={`/city/${c.key}`}>{c.name}</Link>)}
             <Link to="/gallery" style={{ marginTop: 8, color: "#FFD700" }}>📷 Project Gallery</Link>
@@ -732,6 +827,12 @@ function Footer({ setPage }) {
 }
 
 function HomePage({ setPage }) {
+  useSEO({
+    title: "Commercial Glass Door & Window Repair Services | Northern Virginia, DC & Maryland | (703) 609-3508",
+    description: "Commercial glass door & window repair throughout Northern Virginia, Washington DC, and Maryland — storefront glass, commercial doors, emergency board-up, tempered & insulated glass. Licensed, insured, same-day service. Call (703) 609-3508.",
+    path: "/",
+  });
+
   const REVIEWS = [
     { text: "Called at 9pm after our storefront was shattered. They had a board-up crew there within the hour and came back the next morning with the replacement glass. Incredible service.", author: "Michael R.", loc: "Alexandria, VA" },
     { text: "We manage 12 commercial properties in NoVA and these guys are our go-to for all glass repairs. Fast, professional, and fair pricing.", author: "Sandra T.", loc: "Fairfax, VA" },
@@ -748,14 +849,14 @@ function HomePage({ setPage }) {
         <div className="container">
           <div className="hero-badge">⭐ Northern Virginia's #1 Glass Repair Company</div>
           <h1>Commercial Glass Door &amp; <span>Window Repair</span> Services</h1>
-          <p>Fast, professional glass repair for commercial storefronts, residential windows, and custom frameless shower doors throughout Northern Virginia. Same-day service available.</p>
+          <p>Fast, professional glass repair for commercial storefronts, residential windows, and custom frameless shower doors throughout Northern Virginia, Washington DC, and Maryland. Same-day service available.</p>
           <div className="hero-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 Call (703) 609-3508</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Get Free Estimate →</button>
+            <Link to="/contact" className="btn-secondary">Get Free Estimate →</Link>
           </div>
           <div className="hero-stats">
             <div className="hero-stat"><strong>24/7</strong><span>Emergency Service</span></div>
-            <div className="hero-stat"><strong>17+</strong><span>Cities Served</span></div>
+            <div className="hero-stat"><strong>{CITIES.length}+</strong><span>Cities Served</span></div>
             <div className="hero-stat"><strong>1,200+</strong><span>Jobs Completed</span></div>
             <div className="hero-stat"><strong>Same Day</strong><span>Service Available</span></div>
           </div>
@@ -786,42 +887,42 @@ function HomePage({ setPage }) {
             <PhotoBox label="Technician installing glass at Target" src={P.act1} />
           </div>
           <div style={{ textAlign: "center", marginTop: 20 }}>
-            <button className="btn-primary" onClick={() => setPage({ type: "gallery" })} style={{ background: "#0F4C81", color: "#fff" }}>📷 View Full Gallery</button>
+            <Link to="/gallery" className="btn-primary" style={{ background: "#0F4C81", color: "#fff" }}>📷 View Full Gallery</Link>
           </div>
         </div>
       </section>
 
       {/* COMMERCIAL SERVICES */}
-      <section className="section">
+      <section className="section" id="commercial-glass-services">
         <div className="container">
           <div className="section-title">Commercial Glass Services</div>
-          <div className="section-sub">We serve retail stores, office buildings, restaurants, hotels, and commercial properties of all sizes across Northern Virginia.</div>
+          <div className="section-sub">We serve retail stores, office buildings, restaurants, hotels, and commercial properties of all sizes across Northern Virginia, Washington DC, and Maryland.</div>
           <div className="services-grid">
             {COMMERCIAL_SERVICES.map(s => (
-              <div key={s.key} className="service-card" onClick={() => setPage({ type: "service", key: s.key })}>
+              <Link key={s.key} to={`/service/${s.key}`} className="service-card">
                 <div className="service-icon">🏢</div>
                 <h3>{s.name}</h3>
                 <p>{s.desc}</p>
                 <span className="service-card-link">Learn More →</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
 
       {/* RESIDENTIAL & SHOWER */}
-      <section className="section section-alt">
+      <section className="section section-alt" id="residential-shower-services">
         <div className="container">
           <div className="section-title">Residential &amp; Shower Door Services</div>
           <div className="section-sub">From broken window panes to custom frameless shower doors, we handle all residential glass needs in Northern Virginia.</div>
           <div className="services-grid">
             {[...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES].map(s => (
-              <div key={s.key} className="service-card" onClick={() => setPage({ type: "service", key: s.key })}>
+              <Link key={s.key} to={`/service/${s.key}`} className="service-card">
                 <div className="service-icon">{["frameless-shower","shower-enclosures","shower-door-repair"].includes(s.key) ? "🚿" : "🏠"}</div>
                 <h3>{s.name}</h3>
                 <p>{s.desc}</p>
                 <span className="service-card-link">Learn More →</span>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -832,7 +933,7 @@ function HomePage({ setPage }) {
                 <div className="section-title" style={{ marginBottom: 4 }}>🚿 Custom Shower Door Gallery</div>
                 <p style={{ fontSize: 14, color: "#666" }}>Recent shower door installations by our team across Northern Virginia</p>
               </div>
-              <button onClick={() => setPage({ type: "gallery" })} className="btn-primary" style={{ background: "#0F4C81", color: "#fff", fontSize: 13, padding: "10px 20px" }}>View All Projects</button>
+              <Link to="/gallery" className="btn-primary" style={{ background: "#0F4C81", color: "#fff", fontSize: 13, padding: "10px 20px" }}>View All Projects</Link>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
               {[
@@ -843,12 +944,12 @@ function HomePage({ setPage }) {
                 { src: P.sh_gal1, alt: "Sliding door — modern bathroom" },
                 { src: P.sh_encl2, alt: "Frameless corner — subway tile" },
               ].map((photo, i) => (
-                <div key={i} onClick={() => setPage({ type: "gallery" })}
-                  style={{ aspectRatio: "4/3", borderRadius: 8, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.1)", transition: "transform 0.2s, box-shadow 0.2s" }}
+                <Link key={i} to="/gallery"
+                  style={{ aspectRatio: "4/3", borderRadius: 8, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.1)", transition: "transform 0.2s, box-shadow 0.2s", display: "block" }}
                   onMouseEnter={e => { e.currentTarget.style.transform="scale(1.03)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.2)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.1)"; }}>
                   <img src={photo.src} alt={photo.alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -881,7 +982,7 @@ function HomePage({ setPage }) {
                 <p style={{ fontSize: 13, color: "#0F4C81", lineHeight: 1.6, fontWeight: 600 }}>Most foggy windows do NOT need full window replacement. In many cases we can replace only the insulated glass unit, saving homeowners hundreds or even thousands of dollars.</p>
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button className="btn-primary" onClick={() => setPage({ type: "foggy-window" })} style={{ background: "#0F4C81", color: "#fff" }}>🌫️ Learn About Foggy Window Repair</button>
+                <Link to="/foggy-window" className="btn-primary" style={{ background: "#0F4C81", color: "#fff" }}>🌫️ Learn About Foggy Window Repair</Link>
                 <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
               </div>
             </div>
@@ -896,10 +997,10 @@ function HomePage({ setPage }) {
                 { icon: "🔍", label: "All Window Brands" },
                 { icon: "📍", label: "17 Cities Served" },
               ].map(item => (
-                <div key={item.label} onClick={() => setPage({ type: "foggy-window" })} style={{ background: "#fff", border: "1px solid #c5dff8", borderRadius: 8, padding: "14px", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 10 }}>
+                <Link key={item.label} to="/foggy-window" style={{ background: "#fff", border: "1px solid #c5dff8", borderRadius: 8, padding: "14px", cursor: "pointer", transition: "all 0.2s", display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 22 }}>{item.icon}</span>
                   <span style={{ fontSize: 12, fontWeight: 700, color: "#0F4C81" }}>{item.label}</span>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -908,9 +1009,9 @@ function HomePage({ setPage }) {
             <div style={{ fontSize: 12, fontWeight: 700, color: "#666", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Foggy Window Repair — All Service Areas:</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {FOGGY_CITIES.map(c => (
-                <span key={c.key} onClick={() => setPage({ type: "foggy-city", key: c.key })} style={{ background: "#fff", border: "1px solid #1E88E5", color: "#0F4C81", padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
+                <Link key={c.key} to={`/foggy-city/${c.key}`} style={{ background: "#fff", border: "1px solid #1E88E5", color: "#0F4C81", padding: "5px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer" }}>
                   {c.name}
-                </span>
+                </Link>
               ))}
             </div>
           </div>
@@ -918,16 +1019,16 @@ function HomePage({ setPage }) {
       </section>
 
       {/* SERVICE AREAS */}
-      <section className="section">
+      <section className="section" id="service-areas">
         <div className="container">
-          <div className="section-title">Service Areas in Northern Virginia</div>
-          <div className="section-sub">We proudly serve businesses and homeowners across Northern Virginia. Click your city for local service information.</div>
+          <div className="section-title">Service Areas in Northern Virginia, DC &amp; Maryland</div>
+          <div className="section-sub">We proudly serve businesses and homeowners across Northern Virginia, Washington DC, and Maryland. Click your city for local service information.</div>
           <div className="areas-grid">
             {CITIES.map(c => (
-              <div key={c.key} className="area-card" onClick={() => setPage({ type: "city", key: c.key })}>
+              <Link key={c.key} to={`/city/${c.key}`} className="area-card">
                 <h4>{c.name}</h4>
                 <span>{c.county}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -958,7 +1059,7 @@ function HomePage({ setPage }) {
           <div className="section-sub">Helpful guides for Northern Virginia business owners and homeowners.</div>
           <div className="blog-grid">
             {BLOG_POSTS.slice(0, 3).map(p => (
-              <div key={p.key} className="blog-card" onClick={() => setPage({ type: "blog" })}>
+              <Link key={p.key} to="/blog" className="blog-card">
                 <div className="blog-img" style={{padding:0,overflow:"hidden",height:200}}>
                   <img src={
                     p.key === 'how-to-choose' ? P.sf1 :
@@ -974,11 +1075,11 @@ function HomePage({ setPage }) {
                   <h3>{p.title}</h3>
                   <div className="blog-date">{p.date}</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
           <div style={{ textAlign: "center", marginTop: 28 }}>
-            <button className="btn-primary" onClick={() => setPage({ type: "blog" })} style={{ background: "#0F4C81", color: "#fff" }}>View All Articles</button>
+            <Link to="/blog" className="btn-primary" style={{ background: "#0F4C81", color: "#fff" }}>View All Articles</Link>
           </div>
         </div>
       </section>
@@ -990,7 +1091,7 @@ function HomePage({ setPage }) {
           <p>Call now or request a free estimate. We serve all of Northern Virginia with fast, professional glass repair.</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Request Free Estimate</button>
+            <Link to="/contact" className="btn-secondary">Request Free Estimate</Link>
           </div>
         </div>
       </div>
@@ -998,19 +1099,44 @@ function HomePage({ setPage }) {
   );
 }
 
+function serviceCategory(svc) {
+  if (COMMERCIAL_SERVICES.some(s => s.key === svc.key)) return { label: "Commercial Glass Services", to: "/#commercial-glass-services" };
+  if (SHOWER_SERVICES.some(s => s.key === svc.key)) return { label: "Shower Doors", to: "/#residential-shower-services" };
+  return { label: "Residential Glass Services", to: "/#residential-shower-services" };
+}
+
 function ServicePage({ svc, setPage }) {
   const otherServices = ALL_SERVICES.filter(s => s.key !== svc.key).slice(0, 5);
   const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
+  const category = serviceCategory(svc);
+  const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
+
+  useSEO({
+    title: `${svc.name} in Northern Virginia, DC & Maryland | ${COMPANY} | ${PHONE}`,
+    description: `${svc.desc} Licensed, insured, and serving Northern Virginia, Washington DC, and Maryland. Free estimates — call ${PHONE}.`,
+    path: `/service/${svc.key}`,
+  });
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      serviceType: svc.name,
+      name: svc.name,
+      description: svc.desc,
+      provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
+      areaServed: CITIES.map(c => `${c.name}, ${c.state}`),
+      url: `${SITE}/service/${svc.key}`,
+    },
+  ]);
+
   return (
     <>
       <div className="page-hero">
         <div className="container">
-          <div className="breadcrumb">
-            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
-            <span>›</span> Services <span>›</span> {svc.name}
-          </div>
-          <h1>{svc.name} in Northern Virginia</h1>
-          <p>Professional {svc.name.toLowerCase()} serving Alexandria, Arlington, Fairfax, McLean, and all of Northern Virginia. Licensed, insured, and fast.</p>
+          <Breadcrumbs items={crumbs} />
+          <h1>{svc.name} in Northern Virginia, DC &amp; Maryland</h1>
+          <p>Professional {svc.name.toLowerCase()} serving Northern Virginia, Washington DC, and Maryland — Alexandria, Arlington, Fairfax, McLean, Bethesda, and beyond. Licensed, insured, and fast.</p>
         </div>
       </div>
       <section className="section">
@@ -1035,8 +1161,10 @@ function ServicePage({ svc, setPage }) {
               </div>
 
               <h2>About Our {svc.name} Service</h2>
-              <p>{svc.desc} Our licensed technicians serve homeowners and businesses in Alexandria, Arlington, Fairfax, McLean, Reston, Herndon, Ashburn, and all surrounding communities throughout Northern Virginia.</p>
-              <p>When you call us for {svc.name.toLowerCase()}, you can expect a fast response, honest pricing, and high-quality workmanship backed by our satisfaction guarantee. We use only premium materials from trusted manufacturers.</p>
+              <p>{svc.desc} Our licensed technicians serve homeowners and businesses in Alexandria, Arlington, Fairfax, McLean, Bethesda, and Washington DC — and every surrounding community throughout Northern Virginia, DC, and Maryland.</p>
+              <p>When you call us for {svc.name.toLowerCase()}, you can expect a fast response, honest pricing, and high-quality workmanship backed by our satisfaction guarantee. We use only premium materials from trusted manufacturers.
+                {" "}{svc.key !== "emergency-boardup" && <>If your glass is damaged outside business hours, our <Link to="/service/emergency-boardup">emergency commercial glass repair and board-up service</Link> can secure the opening until replacement glass is ready.</>}
+                {" "}Ready to move forward? <Link to="/contact">Request a free quote</Link> and we'll get back to you fast.</p>
 
               <h2>Why Choose Us?</h2>
               <ul>
@@ -1045,7 +1173,7 @@ function ServicePage({ svc, setPage }) {
                 <li>Free estimates — no surprise charges</li>
                 <li>All commercial and residential brands serviced</li>
                 <li>24/7 emergency service for urgent repairs</li>
-                <li>Serving all of Northern Virginia</li>
+                <li>Serving all of Northern Virginia, Washington DC, and Maryland</li>
               </ul>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, margin: "24px 0" }}>
@@ -1055,7 +1183,7 @@ function ServicePage({ svc, setPage }) {
               </div>
 
               <h2>Service Areas</h2>
-              <p>We provide {svc.name.toLowerCase()} throughout Northern Virginia, including:</p>
+              <p>We provide {svc.name.toLowerCase()} throughout Northern Virginia, Washington DC, and Maryland, including:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
                 {CITIES.map(c => (
                   <Link key={c.key} to={`/city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
@@ -1065,7 +1193,7 @@ function ServicePage({ svc, setPage }) {
               {featuredLocations.length > 0 && (
                 <>
                   <h2>{svc.name} — Featured Locations</h2>
-                  <p>Read our local guides for {svc.name.toLowerCase()} in these Northern Virginia communities:</p>
+                  <p>Read our local guides for {svc.name.toLowerCase()} in these communities:</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12 }}>
                     {featuredLocations.map(p => (
                       <Link key={p.slug} to={`/pages/${p.slug}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1112,10 +1240,10 @@ function ServicePage({ svc, setPage }) {
       <div className="cta-section">
         <div className="container">
           <h2>Need {svc.name}?</h2>
-          <p>Call now for a fast, free estimate. We serve all of Northern Virginia.</p>
+          <p>Call now for a fast, free estimate. We serve all of Northern Virginia, Washington DC, and Maryland.</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Request Estimate</button>
+            <Link to="/contact" className="btn-secondary">Request Estimate</Link>
           </div>
         </div>
       </div>
@@ -1125,15 +1253,34 @@ function ServicePage({ svc, setPage }) {
 
 function CityPage({ city, setPage }) {
   const featuredServices = (generatedByCity[city.key] || []).slice(0, 6);
+  const sameState = CITIES.filter(c => c.key !== city.key && c.state === city.state);
+  const nearbyCities = (sameState.length >= 4 ? sameState : CITIES.filter(c => c.key !== city.key)).slice(0, 8);
+  const crumbs = [{ label: "Home", to: "/" }, { label: "Service Areas", to: "/#service-areas" }, { label: `${city.name}, ${city.state}`, to: `/city/${city.key}` }];
+
+  useSEO({
+    title: `Commercial Glass Repair in ${city.name}, ${city.state} | ${COMPANY} | ${PHONE}`,
+    description: `Commercial glass door & window repair in ${city.name}, ${city.state} — storefront glass, commercial doors, emergency board-up, and more. Licensed, insured, same-day service. Call ${PHONE}.`,
+    path: `/city/${city.key}`,
+  });
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      serviceType: "Commercial Glass Repair",
+      name: `Commercial Glass Repair in ${city.name}, ${city.state}`,
+      areaServed: { "@type": "City", name: `${city.name}, ${city.state}` },
+      provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
+      url: `${SITE}/city/${city.key}`,
+    },
+  ]);
+
   return (
     <>
       <div className="page-hero">
         <div className="container">
-          <div className="breadcrumb">
-            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
-            <span>›</span> Service Areas <span>›</span> {city.name}
-          </div>
-          <h1>Commercial Glass Services in {city.name}</h1>
+          <Breadcrumbs items={crumbs} />
+          <h1>Commercial Glass Services in {city.name}, {city.state}</h1>
           <p>Businesses in {city.name} depend on clean, secure storefront glass to attract customers and protect their assets. We provide fast, professional glass repair and installation throughout {city.name} and {city.county}.</p>
         </div>
       </div>
@@ -1149,7 +1296,8 @@ function CityPage({ city, setPage }) {
               </div>
 
               <h2>Commercial Glass Services in {city.name}</h2>
-              <p>Businesses in {city.name} depend on clean, secure storefront glass to attract customers and protect their assets. Our commercial glass services in {city.name} include everything from emergency board-up to full storefront installation.</p>
+              <p>Businesses in {city.name} depend on clean, secure storefront glass to attract customers and protect their assets. Our commercial glass services in {city.name} include everything from <Link to="/service/emergency-boardup">emergency board-up</Link> to full storefront installation.</p>
+              {city.blurb && <p>{city.blurb}</p>}
 
               <div className="city-services">
                 {COMMERCIAL_SERVICES.map(s => (
@@ -1180,6 +1328,7 @@ function CityPage({ city, setPage }) {
                 <li>Free estimates with no obligation</li>
                 <li>Hundreds of completed jobs in {city.name} and surrounding area</li>
               </ul>
+              <p>Ready to get started? <Link to="/contact">Request a free quote</Link> for your {city.name} property, or call us for 24/7 <Link to="/service/emergency-boardup">emergency glass repair</Link>.</p>
 
               {featuredServices.length > 0 && (
                 <>
@@ -1197,7 +1346,7 @@ function CityPage({ city, setPage }) {
 
               <h2 style={{ marginTop: 32 }}>Other Service Areas Near {city.name}</h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {CITIES.filter(c => c.key !== city.key).map(c => (
+                {nearbyCities.map(c => (
                   <Link key={c.key} to={`/city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
@@ -1232,7 +1381,7 @@ function CityPage({ city, setPage }) {
           <p>Call now for a free estimate. We're your local glass repair experts in {city.name}, {city.county}.</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Get Free Estimate</button>
+            <Link to="/contact" className="btn-secondary">Get Free Estimate</Link>
           </div>
         </div>
       </div>
@@ -1320,6 +1469,11 @@ const GAL_ALT = {
 };
 
 function GalleryPage() {
+  useSEO({
+    title: `Project Gallery | ${COMPANY} | ${PHONE}`,
+    description: "Real commercial glass, storefront, emergency board-up, and residential window repair projects completed throughout Northern Virginia, Washington DC, and Maryland.",
+    path: "/gallery",
+  });
   const [tab, setTab] = useState("all");
   const [lightbox, setLightbox] = useState(null);
 
@@ -1415,6 +1569,11 @@ function GalleryPage() {
 }
 
 function BlogPage({ setPage }) {
+  useSEO({
+    title: `Glass Repair Tips & Resources | ${COMPANY} Blog`,
+    description: "Helpful guides on commercial glass repair, emergency board-up, storefront glass, and shower doors for Northern Virginia, DC & Maryland business owners and homeowners.",
+    path: "/blog",
+  });
   return (
     <>
       <div className="page-hero">
@@ -1504,6 +1663,11 @@ function ContactForm() {
 }
 
 function ContactPage() {
+  useSEO({
+    title: `Contact Us | Free Estimate | ${COMPANY} | ${PHONE}`,
+    description: "Request a free commercial or residential glass repair estimate in Northern Virginia, Washington DC, or Maryland. We typically respond within an hour during business hours.",
+    path: "/contact",
+  });
   return (
     <>
       <div className="page-hero">
@@ -1595,6 +1759,26 @@ function ContactPage() {
 
 function FoggyWindowPage({ setPage }) {
   const [openFaq, setOpenFaq] = useState(null);
+  const crumbs = [{ label: "Home", to: "/" }, { label: "Foggy Window Repair", to: "/foggy-window" }];
+
+  useSEO({
+    title: `Foggy Window Repair & Broken Seal Replacement | Northern Virginia | ${PHONE}`,
+    description: "Foggy, cloudy, or hazy windows? We replace only the failed insulated glass unit (IGU) — no full window replacement needed. Save 60–80%. Free estimates throughout Northern Virginia.",
+    path: "/foggy-window",
+  });
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: FOGGY_FAQS.map(f => ({
+        "@type": "Question",
+        name: f.q,
+        acceptedAnswer: { "@type": "Answer", text: f.a },
+      })),
+    },
+  ]);
+
   const foggyServices = [
     { icon: "🌫️", name: "Foggy Window Repair", desc: "Cloudy or hazy windows from failed seals — we fix it without replacing the whole window." },
     { icon: "🔧", name: "Failed Window Seal Repair", desc: "Broken seal letting moisture in between panes? We replace the insulated glass unit." },
@@ -1608,6 +1792,7 @@ function FoggyWindowPage({ setPage }) {
     <>
       <div style={{ background: "linear-gradient(135deg,#0F4C81,#1a3a5c)", color: "#fff", padding: "48px 16px" }}>
         <div className="container">
+          <Breadcrumbs items={crumbs} />
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,215,0,0.15)", border: "1px solid rgba(255,215,0,0.4)", color: "#FFD700", fontSize: 11, fontWeight: 700, letterSpacing: "1px", padding: "5px 14px", borderRadius: 20, marginBottom: 16, textTransform: "uppercase" }}>🪟 Northern Virginia Foggy Window Experts</div>
           <h1 style={{ fontFamily: "Barlow Condensed", fontSize: "clamp(28px,6vw,52px)", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.05, marginBottom: 16 }}>
             Foggy Window Repair &amp; <span style={{ color: "#FFD700" }}>Broken Seal</span> Replacement
@@ -1621,7 +1806,7 @@ function FoggyWindowPage({ setPage }) {
           </div>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <a href={PHONE_HREF} className="btn-primary">📞 Call (703) 609-3508</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Get Free Estimate →</button>
+            <Link to="/contact" className="btn-secondary">Get Free Estimate →</Link>
           </div>
           <div style={{ display: "flex", gap: 24, marginTop: 32, paddingTop: 24, borderTop: "1px solid rgba(255,255,255,0.15)", flexWrap: "wrap" }}>
             {[["IGU-Only", "Replacement"], ["Same-Day", "Service Avail."], ["All Window", "Brands"], ["Free", "Estimates"]].map(([a, b]) => (
@@ -1745,10 +1930,10 @@ function FoggyWindowPage({ setPage }) {
           <div className="section-sub">We serve homeowners throughout Northern Virginia. Click your city for local foggy window repair information.</div>
           <div className="areas-grid">
             {FOGGY_CITIES.map(c => (
-              <div key={c.key} className="area-card" onClick={() => setPage({ type: "foggy-city", key: c.key })}>
+              <Link key={c.key} to={`/foggy-city/${c.key}`} className="area-card">
                 <h4>{c.name}</h4>
                 <span>{c.county}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
@@ -1760,7 +1945,7 @@ function FoggyWindowPage({ setPage }) {
           <p>Most foggy windows do NOT need full replacement. Call now for a free estimate.</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 (703) 609-3508</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Request Free Estimate</button>
+            <Link to="/contact" className="btn-secondary">Request Free Estimate</Link>
           </div>
         </div>
       </div>
@@ -1770,16 +1955,20 @@ function FoggyWindowPage({ setPage }) {
 
 function FoggyCityPage({ city, setPage }) {
   const services = ["Foggy window repair", "Broken window seal replacement", "Condensation between panes fix", "Double pane glass replacement", "Triple pane IGU replacement", "Low-E glass upgrade", "Residential window glass repair", "Insulated glass unit replacement"];
+  const crumbs = [{ label: "Home", to: "/" }, { label: "Foggy Window Repair", to: "/foggy-window" }, { label: city.name, to: `/foggy-city/${city.key}` }];
+
+  useSEO({
+    title: `Foggy Window Repair in ${city.name}, VA | ${PHONE}`,
+    description: `Foggy or cloudy windows in ${city.name}, VA? We replace only the failed insulated glass unit — no full window replacement needed. Free estimates, same-day service available.`,
+    path: `/foggy-city/${city.key}`,
+  });
+  useJsonLd(breadcrumbJsonLd(crumbs));
+
   return (
     <>
       <div className="page-hero">
         <div className="container">
-          <div className="breadcrumb">
-            <span onClick={() => setPage({ type: "home" })} style={{ cursor: "pointer" }}>Home</span>
-            <span>›</span>
-            <span onClick={() => setPage({ type: "foggy-window" })} style={{ cursor: "pointer" }}>Foggy Window Repair</span>
-            <span>›</span> {city.name}
-          </div>
+          <Breadcrumbs items={crumbs} />
           <h1>Foggy Window Repair in {city.name}, VA</h1>
           <p>Professional foggy window repair and insulated glass unit replacement for homeowners in {city.name}, {city.county}. We fix cloudy, hazy, and moisture-damaged windows without replacing the whole window.</p>
         </div>
@@ -1816,10 +2005,11 @@ function FoggyCityPage({ city, setPage }) {
                 <li>Licensed and insured technicians</li>
                 <li>Low-E and energy-efficient glass upgrade options</li>
               </ul>
+              <p>Ready to get started? <Link to="/contact">Request a free quote</Link> for your {city.name} home.</p>
               <h2 style={{ marginTop: 28 }}>Other Areas Near {city.name}</h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
-                {FOGGY_CITIES.filter(c => c.key !== city.key).map(c => (
-                  <span key={c.key} onClick={() => setPage({ type: "foggy-city", key: c.key })} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</span>
+                {FOGGY_CITIES.filter(c => c.key !== city.key).slice(0, 8).map(c => (
+                  <Link key={c.key} to={`/foggy-city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
             </div>
@@ -1845,7 +2035,7 @@ function FoggyCityPage({ city, setPage }) {
                 <h3>All Foggy Window Areas</h3>
                 <div className="cities-list">
                   {FOGGY_CITIES.map(c => (
-                    <a key={c.key} onClick={() => setPage({ type: "foggy-city", key: c.key })} style={{ background: city.key === c.key ? "rgba(255,215,0,0.3)" : undefined }}>{c.name}</a>
+                    <Link key={c.key} to={`/foggy-city/${c.key}`} style={{ background: city.key === c.key ? "rgba(255,215,0,0.3)" : undefined }}>{c.name}</Link>
                   ))}
                 </div>
               </div>
@@ -1859,7 +2049,7 @@ function FoggyCityPage({ city, setPage }) {
           <p>Call now — free estimates for {city.name} homeowners. We'll tell you if you need new glass or a full window.</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Get Free Estimate</button>
+            <Link to="/contact" className="btn-secondary">Get Free Estimate</Link>
           </div>
         </div>
       </div>
@@ -1885,19 +2075,41 @@ function FoggyCityRoute({ setPage }) {
   return <FoggyCityPage city={city} setPage={setPage} />;
 }
 
+// A real 404: noindexed so search engines don't treat a mistyped or
+// unpublished URL as a valid page, with a friendly path back into the site
+// instead of a dead end.
+function NotFoundPage() {
+  const location = useLocation();
+  useSEO({
+    title: `Page Not Found | ${COMPANY}`,
+    description: "The page you're looking for doesn't exist. Browse our commercial glass repair services and service areas, or contact us for help.",
+    path: location.pathname,
+    noindex: true,
+  });
+  return (
+    <div className="section" style={{ textAlign: "center", padding: "80px 20px" }}>
+      <div className="container">
+        <h1>404 — Page Not Found</h1>
+        <p style={{ maxWidth: 500, margin: "12px auto 28px", color: "#666" }}>The page you're looking for doesn't exist or may have moved. Here are some places to start instead:</p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <Link to="/" className="btn-primary" style={{ background: "#0F4C81", color: "#fff" }}>Home</Link>
+          <Link to="/service/commercial-door" className="btn-secondary" style={{ borderColor: "#0F4C81", color: "#0F4C81" }}>Commercial Services</Link>
+          <Link to="/contact" className="btn-secondary" style={{ borderColor: "#0F4C81", color: "#0F4C81" }}>Contact Us</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Renders a page generated by the SEO pipeline. Content is looked up by
-// slug from src/data/generated-pages.json (bundled at build time — no
-// runtime fetch). Unknown slugs fall through to the homepage, same as
-// every other unmatched route in this app.
+// slug from src/data/pages/<slug>.json (bundled at build time — no runtime
+// fetch). An unknown slug is a real 404 — served with noindex, not silently
+// rendered as the homepage — since that would create soft-404 duplicate
+// content at whatever URL was mistyped or unpublished.
 function GeneratedPageRoute({ setPage }) {
   const { slug } = useParams();
   const entry = generatedPages[slug];
-
-  useEffect(() => {
-    document.title = entry ? `${entry.title} | Commercial Glass Door & Window Repair Services` : document.title;
-  }, [entry]);
-
-  if (!entry) return <HomePage setPage={setPage} />;
+  if (!entry) return <NotFoundPage />;
   return <GeneratedPage entry={entry} slug={slug} setPage={setPage} />;
 }
 
@@ -1910,18 +2122,42 @@ function GeneratedPage({ entry, slug, setPage }) {
   const cityObj = CITIES.find(c => c.key === city);
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
   const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
+  const crumbs = [
+    { label: "Home", to: "/" },
+    ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
+    ...(cityObj ? [{ label: cityObj.name, to: `/city/${cityObj.key}` }] : []),
+    { label: title, to: `/pages/${slug}` },
+  ];
+
+  useSEO({
+    title: `${title} | ${COMPANY}`,
+    description: intro || (sections[0] && sections[0].body) || `${title} — serving Northern Virginia, Washington DC, and Maryland. Call ${PHONE} for a free estimate.`,
+    path: `/pages/${slug}`,
+  });
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    svc && {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      serviceType: svc.name,
+      name: title,
+      description: intro || svc.desc,
+      provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
+      areaServed: cityObj ? `${cityObj.name}, ${cityObj.state}` : CITIES.map(c => `${c.name}, ${c.state}`),
+      url: `${SITE}/pages/${slug}`,
+    },
+    faq.length > 0 && {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    },
+  ]);
 
   return (
     <>
       <div className="page-hero">
         <div className="container">
-          <div className="breadcrumb">
-            <Link to="/" style={{ color: "rgba(255,255,255,0.7)" }}>Home</Link>
-            <span>›</span>{" "}
-            {svc && <><Link to={`/service/${svc.key}`} style={{ color: "rgba(255,255,255,0.7)" }}>{svc.name}</Link><span>›</span>{" "}</>}
-            {cityObj && <><Link to={`/city/${cityObj.key}`} style={{ color: "rgba(255,255,255,0.7)" }}>{cityObj.name}</Link><span>›</span>{" "}</>}
-            {title}
-          </div>
+          <Breadcrumbs items={crumbs} />
           <h1>{title}</h1>
           {intro && <p>{intro}</p>}
         </div>
@@ -2001,7 +2237,7 @@ function GeneratedPage({ entry, slug, setPage }) {
           <p>{cta || "Call now for a fast, free estimate. We serve all of Northern Virginia."}</p>
           <div className="cta-btns">
             <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
-            <button className="btn-secondary" onClick={() => setPage({ type: "contact" })}>Request Estimate</button>
+            <Link to="/contact" className="btn-secondary">Request Estimate</Link>
           </div>
         </div>
       </div>
@@ -2043,7 +2279,7 @@ export default function App() {
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/blog" element={<BlogPage setPage={setPage} />} />
           <Route path="/contact" element={<ContactPage />} />
-          <Route path="*" element={<HomePage setPage={setPage} />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer setPage={setPage} />
