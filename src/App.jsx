@@ -139,7 +139,7 @@ function pathToPageType(pathname) {
   if (pathname === "/foggy-window") return { type: "foggy-window" };
   if (pathname.startsWith("/foggy-city/")) return { type: "foggy-city" };
   if (pathname === "/gallery") return { type: "gallery" };
-  if (pathname === "/blog") return { type: "blog" };
+  if (pathname === "/blog" || pathname.startsWith("/blog/")) return { type: "blog" };
   if (pathname === "/contact") return { type: "contact" };
   if (pathname.startsWith("/pages/")) return { type: "generated" };
   return { type: "home" };
@@ -344,16 +344,76 @@ const SHOWER_SERVICES = [
 const ALL_SERVICES = [...COMMERCIAL_SERVICES, ...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES];
 
 const BLOG_POSTS = [
-  { key: "how-to-choose", title: "How to Choose a Commercial Glass Repair Company in Northern Virginia", date: "May 15, 2025", cat: "Tips" },
-  { key: "emergency-boardup-guide", title: "What to Do After Storefront Break-In: Emergency Board-Up Guide", date: "April 28, 2025", cat: "Emergency" },
-  { key: "frameless-shower-cost", title: "How Much Does a Frameless Shower Door Cost in Virginia?", date: "April 10, 2025", cat: "Pricing" },
-  { key: "storefront-glass-types", title: "Tempered vs Laminated Glass: What's Right for Your Storefront?", date: "March 22, 2025", cat: "Education" },
-  { key: "maintain-commercial-doors", title: "5 Ways to Extend the Life of Your Commercial Glass Doors", date: "March 5, 2025", cat: "Maintenance" },
-  { key: "nova-glass-laws", title: "Virginia Commercial Building Glass Code: What Business Owners Need to Know", date: "Feb 18, 2025", cat: "Legal" },
+  {
+    key: "how-to-choose", title: "How to Choose a Commercial Glass Repair Company in Northern Virginia", date: "May 15, 2025", cat: "Tips",
+    excerpt: "Five things to check before you hire a commercial glass repair company — licensing, response time, materials, and how estimates should actually work.",
+    related: ["storefront-glass", "emergency-boardup"],
+    sections: [
+      { heading: "Start With Licensing and Insurance", body: "Any contractor working on your storefront should be able to show proof of liability insurance and, where required, a state contractor license without hesitation. This matters more for glass work than most trades — a botched storefront installation can leave a building exposed to weather, theft, or code violations until it's redone. If a company is reluctant to provide documentation, treat that as a red flag, not an oversight." },
+      { heading: "Response Time Matters More Than Price Alone", body: "For a commercial property, a broken storefront isn't just an inconvenience — it's a security and liability problem. Ask any prospective glass repair company directly: how fast can you get someone on-site for an emergency, and how fast for a routine repair? A company that can't give you a straight answer probably can't give you a fast one either." },
+      { heading: "Ask What Brands and Glass Types They Actually Work With", body: "Commercial door hardware isn't one-size-fits-all — closers, pivots, and continuous hinges come from a handful of major manufacturers, and not every glass company stocks parts for all of them. The same goes for glass itself: tempered, laminated, and insulated glass units each have different lead times and installation requirements. A company that can speak specifically about what your building needs, rather than giving generic answers, is usually the more experienced one." },
+      { heading: "Get a Written, Itemized Estimate", body: "A verbal ballpark isn't the same as a written estimate that breaks out materials, labor, and any rush or after-hours fees. Written estimates protect both sides and make it easy to compare quotes apples-to-apples if you're getting more than one." },
+    ],
+  },
+  {
+    key: "emergency-boardup-guide", title: "What to Do After Storefront Break-In: Emergency Board-Up Guide", date: "April 28, 2025", cat: "Emergency",
+    excerpt: "The right order of operations after a break-in or storefront damage — secure the opening first, document for insurance, then schedule permanent glass replacement.",
+    related: ["emergency-boardup", "storefront-glass"],
+    sections: [
+      { heading: "Secure the Property First", body: "Before anything else, the broken opening needs to be covered — that's what board-up service is for. It's a temporary, weathertight barrier (typically plywood, sometimes with security features) that protects the interior from weather, theft, and further damage until permanent glass can be fabricated and installed. This should happen within hours, not days, especially overnight or over a weekend." },
+      { heading: "Document the Damage Before Cleanup", body: "Photograph the broken glass, the point of entry, and any interior damage before anything is cleaned up or boarded over, if it's safe to do so. This documentation is what your insurance adjuster will want to see, and it's much harder to reconstruct after the fact." },
+      { heading: "What a Professional Board-Up Service Actually Does", body: "A proper board-up isn't just nailing plywood over a hole. It should be measured and fitted to the specific opening, secured in a way that can't easily be pried off, and installed without causing additional damage to the frame — since that frame usually needs to hold the permanent replacement glass later." },
+      { heading: "Scheduling the Permanent Repair", body: "Once the property is secure, the next step is measuring for permanent replacement glass — tempered or laminated safety glass, depending on the opening and local code. Custom-cut commercial glass typically takes a few days to arrive, which is exactly why board-up exists as a bridge, not a fix." },
+    ],
+  },
+  {
+    key: "frameless-shower-cost", title: "How Much Does a Frameless Shower Door Cost in Virginia?", date: "April 10, 2025", cat: "Pricing",
+    excerpt: "What actually drives frameless shower door pricing — glass thickness, hardware finish, custom sizing, and how framed and semi-frameless options compare.",
+    related: ["frameless-shower", "shower-enclosures"],
+    sections: [
+      { heading: "Frameless, Semi-Frameless, or Framed", body: "The biggest cost driver is which style you choose. Framed doors are the least expensive since they use thinner glass supported by an aluminum frame. Semi-frameless splits the difference. Fully frameless doors use thick tempered glass (typically 3/8\" to 1/2\") with minimal hardware to hold everything in place, which is both more expensive in materials and more demanding to install correctly." },
+      { heading: "Glass Thickness and Hardware Finish", body: "Thicker glass costs more, and it's not optional for frameless doors — the glass itself has to provide the structural rigidity that a frame would otherwise supply. Hardware finish (chrome, brushed nickel, matte black, brass) also affects price, along with whether you're choosing standard hinges and handles or a more custom hardware package." },
+      { heading: "Custom Sizing Adds Cost — But It's Usually Necessary", body: "Very few showers are perfectly standard dimensions, especially in older homes. Frameless glass is typically custom-measured and cut for your specific opening rather than ordered off a shelf, which is part of why it costs more than a prefabricated framed unit — but it's also why it fits and seals properly." },
+      { heading: "Getting an Accurate Quote", body: "Because so much depends on your specific bathroom — shower size, tile condition, whether it's a new installation or a replacement — the most reliable way to get a real number is an in-person measurement and quote rather than a phone estimate." },
+    ],
+  },
+  {
+    key: "storefront-glass-types", title: "Tempered vs Laminated Glass: What's Right for Your Storefront?", date: "March 22, 2025", cat: "Education",
+    excerpt: "Tempered and laminated glass fail differently and serve different purposes in a storefront — here's how to think about which one your opening needs.",
+    related: ["tempered-glass", "laminated-safety-glass", "storefront-glass"],
+    sections: [
+      { heading: "How Tempered Glass Works", body: "Tempered glass is heat-treated to be roughly four times stronger than standard annealed glass. When it does break, it shatters into small, relatively blunt pieces rather than sharp shards — which is why building codes require it in most storefront and low-height glazing applications. It's the standard choice for straightforward storefront replacement." },
+      { heading: "How Laminated Glass Works", body: "Laminated glass is two (or more) layers of glass bonded around an interlayer, usually PVB. When it breaks, the pieces tend to stay adhered to the interlayer instead of falling out — which is why it's often chosen for security-sensitive storefronts, sound-control applications, or openings where you want the glass to stay in place even if it's compromised." },
+      { heading: "Code Requirements Aren't Optional", body: "Most jurisdictions require safety glazing — tempered or laminated — in doors, sidelites, and glass within a certain height of the floor. Which specific type is required depends on the application and local code, so this is worth confirming with your contractor or local building department rather than assuming." },
+      { heading: "Which One Fits Your Storefront", body: "For a standard storefront replacement with no unusual security or noise concerns, tempered glass is typically the more cost-effective, faster-to-source choice. If you're dealing with a high-crime area, a street-level opening you want more break-resistant, or a noise-sensitive space, laminated glass is worth the conversation." },
+    ],
+  },
+  {
+    key: "maintain-commercial-doors", title: "5 Ways to Extend the Life of Your Commercial Glass Doors", date: "March 5, 2025", cat: "Maintenance",
+    excerpt: "Commercial door closers, hinges, and tracks wear out from daily traffic — a few basic maintenance habits catch small problems before they become full replacements.",
+    related: ["door-closers", "commercial-door", "continuous-hinges"],
+    sections: [
+      { heading: "1. Keep Door Closers Adjusted", body: "A door closer that slams, doesn't fully latch, or swings too fast isn't just annoying — it's putting repeated stress on the glass and frame with every open-and-close cycle. Closers can usually be re-adjusted rather than replaced if caught early." },
+      { heading: "2. Check Hinges and Pivots Regularly", body: "High-traffic commercial doors put a lot of load on hinges or continuous (piano) hinges. Listen for squeaking, watch for a door that's started to sag or drag on the threshold, and address it before the misalignment starts stressing the glass itself." },
+      { heading: "3. Clean Tracks and Hardware", body: "Grit and debris in door tracks and hardware accelerate wear on rollers, closers, and locking mechanisms. Regular cleaning is inexpensive insurance against hardware failures." },
+      { heading: "4. Don't Ignore Small Chips or Cracks", body: "A small chip near the edge of a tempered glass panel can, in some cases, be the starting point for a spontaneous break later, especially with temperature swings. Small damage is far cheaper to address — or monitor properly — than a full panel replacement after it's spread." },
+      { heading: "5. Schedule a Preventive Inspection", body: "For businesses with heavy foot traffic, an annual check of door hardware, seals, and glass condition catches problems while they're still minor repairs instead of emergency replacements." },
+    ],
+  },
+  {
+    key: "nova-glass-laws", title: "Virginia Commercial Building Glass Code: What Business Owners Need to Know", date: "Feb 18, 2025", cat: "Legal",
+    excerpt: "A plain-language overview of why commercial glazing code exists and what to ask your contractor — not a substitute for checking with your local building department.",
+    related: ["tempered-glass", "laminated-safety-glass"],
+    sections: [
+      { heading: "Why Glazing Code Exists", body: "Building codes regulate what type of glass can go where in a commercial building — mainly to prevent injuries from broken glass in doors, low windows, and other high-contact areas. These requirements generally trace back to nationally adopted model codes, applied and enforced locally, which is why specifics can vary by jurisdiction." },
+      { heading: "Where Safety Glazing Is Typically Required", body: "In general, glass in and near doors, glass close to the floor, and glass in other 'hazardous locations' as defined by code needs to be safety glazing — tempered or laminated — rather than standard annealed glass. The exact thresholds and definitions are set by the code edition your locality has adopted." },
+      { heading: "This Isn't Legal Advice — Verify Locally", body: "Code requirements and how they're enforced can differ between jurisdictions and change over time. This article is a general, plain-language overview, not a substitute for confirming requirements with your local building department or a licensed contractor for your specific project." },
+      { heading: "Working With a Contractor Who Handles This Correctly", body: "A glass repair company that regularly does commercial work should be able to tell you, for your specific opening, whether safety glazing is required and can pull permits when needed. That's worth asking about directly before work begins, not after." },
+    ],
+  },
 ];
 
 const css = `
-  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap');
   *{box-sizing:border-box;margin:0;padding:0;}
   html,body{overflow-x:hidden;width:100%;max-width:100%;}
   body{font-family:'Barlow',sans-serif;background:#fff;color:#2D3748;}
@@ -1568,6 +1628,17 @@ function GalleryPage() {
   );
 }
 
+function blogImage(key) {
+  return (
+    key === 'how-to-choose' ? P.sf1 :
+    key === 'emergency-boardup-guide' ? P.em1 :
+    key === 'frameless-shower-cost' ? P.sh_hero1 :
+    key === 'storefront-glass-types' ? P.sf3 :
+    key === 'maintain-commercial-doors' ? P.dr1 :
+    key === 'nova-glass-laws' ? P.sf8 : P.hero1
+  );
+}
+
 function BlogPage({ setPage }) {
   useSEO({
     title: `Glass Repair Tips & Resources | ${COMPANY} Blog`,
@@ -1586,29 +1657,126 @@ function BlogPage({ setPage }) {
         <div className="container">
           <div className="blog-grid">
             {BLOG_POSTS.map(p => (
-              <div key={p.key} className="blog-card">
+              <Link key={p.key} to={`/blog/${p.key}`} className="blog-card">
                 <div className="blog-img" style={{padding:0,overflow:"hidden",height:200}}>
-                  <img src={
-                    p.key === 'how-to-choose' ? P.sf1 :
-                    p.key === 'emergency-boardup-guide' ? P.em1 :
-                    p.key === 'frameless-shower-cost' ? P.sh_hero1 :
-                    p.key === 'storefront-glass-types' ? P.sf3 :
-                    p.key === 'maintain-commercial-doors' ? P.dr1 :
-                    p.key === 'nova-glass-laws' ? P.sf8 : P.hero1
-                  } alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
+                  <img src={blogImage(p.key)} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} loading="lazy" />
                 </div>
                 <div className="blog-content">
                   <div className="blog-cat">{p.cat}</div>
                   <h3>{p.title}</h3>
                   <div className="blog-date">{p.date}</div>
-                  <p style={{ fontSize: 12, color: "#666", marginTop: 8, lineHeight: 1.6 }}>Read our expert guide on this topic for Northern Virginia business owners and homeowners.</p>
+                  <p style={{ fontSize: 12, color: "#666", marginTop: 8, lineHeight: 1.6 }}>{p.excerpt}</p>
                   <span style={{ display: "inline-block", marginTop: 12, fontSize: 12, fontWeight: 700, color: "#1E88E5" }}>Read Article →</span>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
       </section>
+    </>
+  );
+}
+
+function BlogPostRoute() {
+  const { key } = useParams();
+  const post = BLOG_POSTS.find(p => p.key === key);
+  if (!post) return <NotFoundPage />;
+  return <BlogPostPage post={post} />;
+}
+
+function BlogPostPage({ post }) {
+  const crumbs = [{ label: "Home", to: "/" }, { label: "Blog", to: "/blog" }, { label: post.title, to: `/blog/${post.key}` }];
+  const relatedServices = (post.related || []).map(key => ALL_SERVICES.find(s => s.key === key)).filter(Boolean);
+
+  useSEO({
+    title: `${post.title} | ${COMPANY} Blog`,
+    description: post.excerpt,
+    path: `/blog/${post.key}`,
+  });
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    {
+      "@context": "https://schema.org",
+      "@type": "BlogPosting",
+      headline: post.title,
+      description: post.excerpt,
+      datePublished: post.date,
+      author: { "@type": "Organization", name: COMPANY },
+      publisher: { "@type": "Organization", name: COMPANY },
+      url: `${SITE}/blog/${post.key}`,
+    },
+  ]);
+
+  return (
+    <>
+      <div className="page-hero">
+        <div className="container">
+          <Breadcrumbs items={crumbs} />
+          <h1>{post.title}</h1>
+          <p>{post.date} · {post.cat}</p>
+        </div>
+      </div>
+      <section className="section">
+        <div className="container">
+          <div className="service-content">
+            <div className="service-body">
+              <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 24, maxHeight: 320 }}>
+                <img src={blogImage(post.key)} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+              </div>
+              {(post.sections || []).map((s, i) => (
+                <div key={i}>
+                  <h2>{s.heading}</h2>
+                  <p>{s.body}</p>
+                </div>
+              ))}
+              <p>Have a question about your specific situation? <Link to="/contact">Request a free quote</Link> and we'll walk you through it.</p>
+
+              {relatedServices.length > 0 && (
+                <>
+                  <h2>Related Services</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {relatedServices.map(s => (
+                      <Link key={s.key} to={`/service/${s.key}`} style={{ padding: "12px 16px", border: "1px solid #e0e8f0", borderRadius: 6, cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#0F4C81", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        {s.name} <span style={{ color: "#1E88E5" }}>→</span>
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="sidebar">
+              <div className="sidebar-card">
+                <h3>Get a Free Estimate</h3>
+                <a href={PHONE_HREF} className="ph-big">{PHONE}</a>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginBottom: 16 }}>Free Estimates • Fast Response • Same-Day Available</p>
+                <ul className="sidebar-list">
+                  <li>Licensed &amp; Insured</li>
+                  <li>No Hidden Fees</li>
+                  <li>Serving NoVA, DC &amp; Maryland</li>
+                </ul>
+              </div>
+              <div className="sidebar-card" style={{ background: "#1a2332" }}>
+                <h3>More Articles</h3>
+                <div className="cities-list">
+                  {BLOG_POSTS.filter(p => p.key !== post.key).slice(0, 5).map(p => (
+                    <Link key={p.key} to={`/blog/${p.key}`}>{p.title}</Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+      <div className="cta-section">
+        <div className="container">
+          <h2>Have a Glass Repair Question?</h2>
+          <p>Call now for a fast, free estimate. We serve Northern Virginia, Washington DC, and Maryland.</p>
+          <div className="cta-btns">
+            <a href={PHONE_HREF} className="btn-primary">📞 {PHONE}</a>
+            <Link to="/contact" className="btn-secondary">Request Estimate</Link>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
@@ -2278,6 +2446,7 @@ export default function App() {
           <Route path="/pages/:slug" element={<GeneratedPageRoute setPage={setPage} />} />
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/blog" element={<BlogPage setPage={setPage} />} />
+          <Route path="/blog/:key" element={<BlogPostRoute />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
