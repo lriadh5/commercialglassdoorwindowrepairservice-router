@@ -128,7 +128,7 @@ Tell them:
 1. **Google Search Console** — Submit your sitemap at `yoursite.com/sitemap.xml`
 2. **Google Analytics** — Add GA4 tracking code to `index.html`
 3. **Google Business Profile** — Update your website URL
-4. **Domain Email** — Set up info@commercialglassdoorwindowrepairservices.com via Google Workspace or Zoho Mail
+4. **Business Email** — commercialglassdmv@gmail.com
 
 ---
 

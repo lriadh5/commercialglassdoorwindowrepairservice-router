@@ -567,6 +567,25 @@ const css = `
   .sidebar-list{list-style:none;display:flex;flex-direction:column;gap:6px;}
   .sidebar-list li{font-size:13px;display:flex;align-items:center;gap:6px;}
   .sidebar-list li::before{content:'✓';color:#FFD700;font-weight:700;}
+
+  /* GENERATED SEO PAGE TEMPLATE — hero image, glance strip, why-choose cards, FAQ cards, mid CTA */
+  .gen-hero-image{width:100%;height:280px;overflow:hidden;background:#1E3A5F;}
+  .gen-hero-image img{width:100%;height:100%;object-fit:cover;display:block;}
+  .glance-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px;}
+  .glance-card{background:#F0F7FF;border:1px solid #c5dff8;border-radius:8px;padding:12px 10px;text-align:center;font-size:12px;font-weight:700;color:#0F4C81;display:flex;flex-direction:column;align-items:center;gap:4px;line-height:1.3;}
+  .glance-card span{font-size:20px;}
+  .why-choose-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0 28px;}
+  .why-choose-card{background:#fff;border:1px solid #e8ecf0;border-radius:8px;padding:18px;}
+  .why-choose-icon{font-size:26px;display:block;margin-bottom:8px;}
+  .why-choose-card h3{font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;color:#0F4C81;text-transform:uppercase;margin-bottom:6px;}
+  .why-choose-card p{font-size:13px;line-height:1.6;color:#444;margin:0;}
+  .faq-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+  .faq-card{background:#fff;border:1px solid #e8ecf0;border-radius:8px;padding:16px 18px;}
+  .faq-card h3{font-size:15px;font-weight:800;color:#0F4C81;margin-bottom:6px;}
+  .faq-card p{font-size:14px;line-height:1.7;color:#444;margin:0;}
+  .mid-cta{background:linear-gradient(135deg,#0F4C81,#1a3a5c);border-radius:8px;padding:18px 20px;margin:24px 0;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+  .mid-cta span{color:#fff;font-size:14px;font-weight:700;}
+  .mid-cta a{background:#FFD700;color:#0F4C81;font-family:'Barlow Condensed',sans-serif;font-size:15px;font-weight:800;text-transform:uppercase;padding:10px 20px;border-radius:4px;white-space:nowrap;}
   .cities-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
   .cities-list a{background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:4px 10px;border-radius:20px;cursor:pointer;transition:background 0.2s;}
   .cities-list a:hover{background:rgba(255,255,255,0.3);}
@@ -690,6 +709,14 @@ const css = `
     .process-grid{grid-template-columns:1fr!important;}
     .faq-q{font-size:13px!important;}
     .hero::before{display:none;}
+
+    .gen-hero-image{height:170px;}
+    .glance-strip{grid-template-columns:repeat(2,1fr);gap:8px;}
+    .why-choose-grid{grid-template-columns:1fr;gap:10px;}
+    .service-body h2{font-size:20px;margin:20px 0 8px;}
+    .service-body p{font-size:14px;line-height:1.75;}
+    .mid-cta{flex-direction:column;align-items:stretch;text-align:center;padding:16px;}
+    .mid-cta a{width:100%;text-align:center;}
   }
   @media(max-width:400px){
     .logo-main{font-size:12px;}
@@ -856,7 +883,7 @@ function Footer({ setPage }) {
             <div className="footer-logo">{COMPANY}</div>
             <p className="footer-about">Northern Virginia, Washington DC & Maryland's trusted commercial and residential glass repair company. Serving Alexandria, Arlington, Fairfax, Bethesda, DC, and all surrounding areas with fast, professional service.</p>
             <a href={PHONE_HREF} className="footer-phone">{PHONE}</a>
-            <p style={{ fontSize: 12, marginTop: 8, color: "rgba(255,255,255,0.5)" }}>📧 info@commercialglassdoorwindowrepairservices.com<br />📍 Serving Northern Virginia, Washington DC &amp; Maryland</p>
+            <p style={{ fontSize: 12, marginTop: 8, color: "rgba(255,255,255,0.5)" }}>📧 commercialglassdmv@gmail.com<br />📍 Serving Northern Virginia, Washington DC &amp; Maryland</p>
           </div>
           <div className="footer-col">
             <h4>Commercial</h4>
@@ -1860,7 +1887,7 @@ function ContactPage() {
                 <div className="contact-icon">📧</div>
                 <div>
                   <div className="contact-label">Email</div>
-                  <div className="contact-val">info@commercialglassdoorwindowrepairservices.com</div>
+                  <div className="contact-val">commercialglassdmv@gmail.com</div>
                 </div>
               </div>
               <div className="contact-row">
@@ -2274,6 +2301,78 @@ function NotFoundPage() {
 // fetch). An unknown slug is a real 404 — served with noindex, not silently
 // rendered as the homepage — since that would create soft-404 duplicate
 // content at whatever URL was mistyped or unpublished.
+// --- GeneratedPage visual template helpers ----------------------------------
+// Deterministic (not random) so a given page shows the same photos on every
+// rebuild, while different pages sharing a service cycle through different
+// images from that service's pool instead of all showing the same photo.
+function hashSlug(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+const SERVICE_IMAGE_POOLS = {
+  "storefront-glass": ["sf1", "sf2", "sf3", "sf4", "sf5", "sf6", "sf7", "sf8", "sf9", "sf10"],
+  "aluminum-storefront": ["sf1", "sf2", "sf3", "sf4", "sf5", "act1"],
+  "storefront-door-repair": ["sf2", "sf3", "sf4", "sf5", "dr1", "dr3"],
+  "glass-walls": ["sf6", "sf7", "sf8", "act5", "act6"],
+  "office-glass": ["sf7", "sf8", "act5", "act6"],
+  "commercial-window-replacement": ["sf1", "sf9", "sf10", "act2", "act4"],
+  "commercial-insulated-glass": ["sf2", "sf9", "sf10", "act2", "act4"],
+  "tempered-glass": ["sf3", "sf4", "act1", "act7"],
+  "laminated-safety-glass": ["sf4", "sf5", "act1", "act7"],
+  "commercial-door": ["dr1", "dr2", "dr3", "dr4", "dr5", "dr6", "dr7", "dr8"],
+  "door-closers": ["dr2", "dr4", "dr6", "dr8"],
+  "continuous-hinges": ["dr3", "dr5", "dr7"],
+  "emergency-boardup": ["em1", "em2", "em3", "em4", "em5", "em6", "em7", "em8"],
+  "window-repair": ["res1", "res2", "res3", "res4", "res5", "res6"],
+  "window-replacement": ["res5", "res6", "res7", "res8"],
+  "foggy-window-repair": ["res1", "res2", "res3", "res9", "res10"],
+  "broken-seal-repair": ["res2", "res3", "res9", "res10"],
+  "igd-replacement": ["res3", "res9", "res10", "res11"],
+  "double-pane-replacement": ["res4", "res9", "res11", "res12"],
+  "triple-pane-replacement": ["res4", "res9", "res11", "res12"],
+  "low-e-glass": ["res6", "res7", "res8", "res12"],
+  "screen-repair": ["res7", "res8", "res12"],
+  "arch-windows": ["res1", "res6", "res11"],
+  "frameless-shower": ["sh_hero1", "sh_hero2", "sh_hero3", "sh_gal1", "sh_gal2", "sh_gal3"],
+  "shower-enclosures": ["sh_encl1", "sh_encl2", "sh_encl3", "sh_gal1", "sh_gal2"],
+  "shower-door-repair": ["sh_repair1", "sh_repair2", "sh_repair3", "sh_gal3"],
+};
+const DEFAULT_IMAGE_POOL = ["sf1", "sf2", "act1", "res1"];
+
+// Returns `count` image URLs from the service's pool, starting at a
+// slug-derived offset so different slugs for the same service don't all
+// land on the same first image.
+function getGeneratedPageImages(serviceKey, slug, count) {
+  const poolKeys = SERVICE_IMAGE_POOLS[serviceKey] || DEFAULT_IMAGE_POOL;
+  const pool = poolKeys.map(k => P[k]).filter(Boolean);
+  if (pool.length === 0 || count <= 0) return [];
+  const start = hashSlug(slug || "") % pool.length;
+  const picked = [];
+  for (let i = 0; i < count && i < pool.length; i++) picked.push(pool[(start + i) % pool.length]);
+  return picked;
+}
+
+// Dynamic "Serving [Area]" trust text — DC/MD/VA cities each get a label
+// matching their actual region instead of a hardcoded "Serving All of NoVA".
+function serviceAreaLabel(cityObj) {
+  if (!cityObj) return "Serving Northern Virginia, DC & Maryland";
+  if (cityObj.state === "DC") return `Serving ${cityObj.name}, DC`;
+  if (cityObj.state === "MD") return `Serving ${cityObj.name}, Maryland`;
+  return `Serving ${cityObj.name} & Northern Virginia`;
+}
+
+// Fixed, factual "Why Choose Us" claims — identical wording to the bullets
+// already live on ServicePage, reused rather than letting any page invent
+// new capability claims.
+const WHY_CHOOSE_FACTS = [
+  { icon: "⚡", title: "Same-Day Service", desc: "Same-day service available for most requests." },
+  { icon: "🛡️", title: "Licensed & Insured", desc: "Licensed and fully insured technicians on every job." },
+  { icon: "💰", title: "Free, No-Surprise Estimates", desc: "Free estimates — no surprise charges." },
+  { icon: "🔧", title: "All Brands Serviced", desc: "All commercial and residential brands serviced." },
+];
+
 function GeneratedPageRoute({ setPage }) {
   const { slug } = useParams();
   const entry = generatedPages[slug];
@@ -2321,6 +2420,22 @@ function GeneratedPage({ entry, slug, setPage }) {
     },
   ]);
 
+  const areaLabel = serviceAreaLabel(cityObj);
+
+  // Photo plan: 1 hero image (near the top) + up to 3 body photos on longer
+  // pages, all from the same service-matched pool, all picked deterministically
+  // from the page's slug (see getGeneratedPageImages above).
+  const numBodyPhotos = Math.min(3, Math.max(0, sections.length - 2));
+  const pagePhotos = getGeneratedPageImages(service, slug, numBodyPhotos + 1);
+  const heroImage = pagePhotos[0];
+  const inlineImages = pagePhotos.slice(1);
+  const imagePositions = new Set();
+  for (let k = 0; k < inlineImages.length; k++) {
+    imagePositions.add(Math.min(sections.length - 1, Math.round(((k + 1) * sections.length) / (inlineImages.length + 1))));
+  }
+  const midIndex = sections.length >= 3 ? Math.floor(sections.length / 2) : -1;
+  let inlineImageCursor = 0;
+
   return (
     <>
       <div className="page-hero">
@@ -2330,26 +2445,71 @@ function GeneratedPage({ entry, slug, setPage }) {
           {intro && <p>{intro}</p>}
         </div>
       </div>
+
+      {heroImage && (
+        <div className="gen-hero-image">
+          <img src={heroImage} alt={`${svc ? svc.name : title} — professional service`} loading="lazy" />
+        </div>
+      )}
+
       <section className="section">
         <div className="container">
           <div className="service-content">
             <div className="service-body">
-              {sections.map((s, i) => (
-                <div key={i}>
-                  <h2>{s.heading}</h2>
-                  <p>{s.body}</p>
-                </div>
-              ))}
+              <div className="glance-strip">
+                <div className="glance-card"><span>⚡</span>Fast Response</div>
+                <div className="glance-card"><span>🛡️</span>Licensed &amp; Insured</div>
+                <div className="glance-card"><span>💰</span>Free Estimates</div>
+                <div className="glance-card"><span>📍</span>{areaLabel}</div>
+              </div>
+
+              {sections.map((s, i) => {
+                const showImage = imagePositions.has(i) && inlineImageCursor < inlineImages.length;
+                const img = showImage ? inlineImages[inlineImageCursor] : null;
+                if (showImage) inlineImageCursor += 1;
+                return (
+                  <div key={i}>
+                    <h2>{s.heading}</h2>
+                    <p>{s.body}</p>
+                    {img && (
+                      <PhotoBox
+                        label={`${svc ? svc.name : title} — project photo`}
+                        src={img}
+                        style={{ minHeight: 200, borderRadius: 8, margin: "4px 0 20px" }}
+                      />
+                    )}
+                    {i === midIndex && (
+                      <div className="mid-cta">
+                        <span>Ready to get started?</span>
+                        <a href={PHONE_HREF}>📞 Call {PHONE}</a>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              <h2>Why Choose Us</h2>
+              <div className="why-choose-grid">
+                {WHY_CHOOSE_FACTS.map((f, i) => (
+                  <div className="why-choose-card" key={i}>
+                    <span className="why-choose-icon">{f.icon}</span>
+                    <h3>{f.title}</h3>
+                    <p>{f.desc}</p>
+                  </div>
+                ))}
+              </div>
 
               {faq.length > 0 && (
                 <>
                   <h2>Frequently Asked Questions</h2>
-                  {faq.map((f, i) => (
-                    <div key={i} style={{ marginBottom: 16 }}>
-                      <h3 style={{ fontSize: 15, marginBottom: 4 }}>{f.q}</h3>
-                      <p>{f.a}</p>
-                    </div>
-                  ))}
+                  <div className="faq-list">
+                    {faq.map((f, i) => (
+                      <div className="faq-card" key={i}>
+                        <h3>{f.q}</h3>
+                        <p>{f.a}</p>
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
 
@@ -2383,7 +2543,7 @@ function GeneratedPage({ entry, slug, setPage }) {
                 <ul className="sidebar-list">
                   <li>Licensed &amp; Insured</li>
                   <li>No Hidden Fees</li>
-                  <li>Serving All of NoVA</li>
+                  <li>{areaLabel}</li>
                 </ul>
               </div>
               {(svc || cityObj) && (
