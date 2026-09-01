@@ -2343,12 +2343,16 @@ const DEFAULT_IMAGE_POOL = ["sf1", "sf2", "act1", "res1"];
 
 // Returns `count` image URLs from the service's pool, starting at a
 // slug-derived offset so different slugs for the same service don't all
-// land on the same first image.
-function getGeneratedPageImages(serviceKey, slug, count) {
+// land on the same first image. If the page's data has an explicit
+// image_key (set by the image-refresh pipeline), that image's pool
+// position is used as the start offset instead, so a refresh actually
+// changes which photo appears first/inline.
+function getGeneratedPageImages(serviceKey, slug, count, overrideKey) {
   const poolKeys = SERVICE_IMAGE_POOLS[serviceKey] || DEFAULT_IMAGE_POOL;
   const pool = poolKeys.map(k => P[k]).filter(Boolean);
   if (pool.length === 0 || count <= 0) return [];
-  const start = hashSlug(slug || "") % pool.length;
+  const overrideIndex = overrideKey ? poolKeys.indexOf(overrideKey) : -1;
+  const start = overrideIndex >= 0 ? overrideIndex : hashSlug(slug || "") % pool.length;
   const picked = [];
   for (let i = 0; i < count && i < pool.length; i++) picked.push(pool[(start + i) % pool.length]);
   return picked;
@@ -2426,8 +2430,9 @@ function GeneratedPage({ entry, slug, setPage }) {
   // pages, all from the same service-matched pool, all picked deterministically
   // from the page's slug (see getGeneratedPageImages above).
   const numBodyPhotos = Math.min(3, Math.max(0, sections.length - 2));
-  const pagePhotos = getGeneratedPageImages(service, slug, numBodyPhotos + 1);
+  const pagePhotos = getGeneratedPageImages(service, slug, numBodyPhotos + 1, entry.image_key);
   const heroImage = pagePhotos[0];
+  const heroImageAlt = `${svc ? svc.name : title}${cityObj ? ` in ${cityObj.name}, ${cityObj.state}` : ""} — professional service`;
   const inlineImages = pagePhotos.slice(1);
   const imagePositions = new Set();
   for (let k = 0; k < inlineImages.length; k++) {
@@ -2448,7 +2453,7 @@ function GeneratedPage({ entry, slug, setPage }) {
 
       {heroImage && (
         <div className="gen-hero-image">
-          <img src={heroImage} alt={`${svc ? svc.name : title} — professional service`} loading="lazy" />
+          <img src={heroImage} alt={heroImageAlt} loading="lazy" />
         </div>
       )}
 
