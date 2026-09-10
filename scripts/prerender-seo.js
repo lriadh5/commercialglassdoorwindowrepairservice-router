@@ -497,7 +497,9 @@ function renderGeneratedPage(slug, entry) {
     <div class="page-hero"><div class="container">
       ${breadcrumbsHtml(crumbs)}
       <h1>${esc(title)}</h1>
+      ${entry.updated_at ? `<p class="page-updated-note">Updated: ${esc(entry.updated_at)}</p>` : ""}
       ${intro ? `<p>${esc(intro)}</p>` : ""}
+      ${entry.freshness_note ? `<p class="page-freshness-note">${esc(entry.freshness_note)}</p>` : ""}
     </div></div>
     <section class="section"><div class="container"><div class="service-content"><div class="service-body">
       <p>${esc(areaLabel)} — Fast Response, Licensed &amp; Insured, Free Estimates.</p>

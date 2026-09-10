@@ -2447,7 +2447,9 @@ function GeneratedPage({ entry, slug, setPage }) {
         <div className="container">
           <Breadcrumbs items={crumbs} />
           <h1>{title}</h1>
+          {entry.updated_at && <p className="page-updated-note">Updated: {entry.updated_at}</p>}
           {intro && <p>{intro}</p>}
+          {entry.freshness_note && <p className="page-freshness-note">{entry.freshness_note}</p>}
         </div>
       </div>
 
