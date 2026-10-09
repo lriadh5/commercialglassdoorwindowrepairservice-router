@@ -87,7 +87,7 @@ function extractConstSource(source, name) {
 const DATA_NAMES = [
   "CITIES", "COMMERCIAL_SERVICES", "RESIDENTIAL_SERVICES", "SHOWER_SERVICES",
   "FOGGY_CITIES", "FOGGY_FAQS", "BLOG_POSTS", "WHY_CHOOSE_FACTS",
-  "COMPANY", "PHONE", "PHONE_HREF",
+  "COMPANY", "COMPANY_SHORT", "PHONE", "PHONE_HREF", "MAX_TITLE_LEN",
 ];
 const declarations = DATA_NAMES
   .map(name => `const ${name} = ${extractConstSource(appSource, name)};`)
@@ -100,8 +100,31 @@ const evalBody = `
 `;
 const {
   CITIES, COMMERCIAL_SERVICES, RESIDENTIAL_SERVICES, SHOWER_SERVICES, ALL_SERVICES,
-  FOGGY_CITIES, FOGGY_FAQS, BLOG_POSTS, WHY_CHOOSE_FACTS, COMPANY, PHONE, PHONE_HREF,
+  FOGGY_CITIES, FOGGY_FAQS, BLOG_POSTS, WHY_CHOOSE_FACTS, COMPANY, COMPANY_SHORT,
+  PHONE, PHONE_HREF, MAX_TITLE_LEN,
 } = new Function(evalBody)();
+
+// --- Title builders, mirroring App.jsx's truncateTitle/generatedPageTitle/
+// servicePageTitle/cityPageTitle exactly (see App.jsx for the rationale) ---
+function truncateTitle(str, maxLen = MAX_TITLE_LEN) {
+  if (str.length <= maxLen) return str;
+  const cut = str.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trim();
+}
+function generatedPageTitle(rawTitle) {
+  const raw = (rawTitle || "").trim();
+  const hasBrand = /commercial glass|window repair/i.test(raw);
+  if (hasBrand) return truncateTitle(raw);
+  const withSuffix = `${raw} | ${COMPANY_SHORT}`;
+  return withSuffix.length <= MAX_TITLE_LEN ? withSuffix : truncateTitle(raw);
+}
+function servicePageTitle(svcName) {
+  return truncateTitle(`${svcName} | Northern VA, DC & MD | ${COMPANY_SHORT}`);
+}
+function cityPageTitle(cityName, state) {
+  return truncateTitle(`Commercial Glass Repair in ${cityName}, ${state} | ${COMPANY_SHORT}`);
+}
 
 // --- Generated pages (src/data/pages/*.json) + the same cross-link index
 // GeneratedPage/ServicePage/CityPage build at runtime (buildGeneratedIndex
@@ -225,7 +248,7 @@ function renderService(svc) {
   `;
   return {
     path: `/service/${svc.key}`,
-    title: `${svc.name} in Northern Virginia, DC & Maryland | ${COMPANY} | ${PHONE}`,
+    title: servicePageTitle(svc.name),
     description: `${svc.desc} Licensed, insured, and serving Northern Virginia, Washington DC, and Maryland. Free estimates — call ${PHONE}.`,
     schemas: [
       breadcrumbJsonLd(crumbs),
@@ -284,7 +307,7 @@ function renderCity(city) {
   `;
   return {
     path: `/city/${city.key}`,
-    title: `Commercial Glass Repair in ${city.name}, ${city.state} | ${COMPANY} | ${PHONE}`,
+    title: cityPageTitle(city.name, city.state),
     description: `Commercial glass door & window repair in ${city.name}, ${city.state} — storefront glass, commercial doors, emergency board-up, and more. Licensed, insured, same-day service. Call ${PHONE}.`,
     schemas: [
       breadcrumbJsonLd(crumbs),
@@ -422,6 +445,13 @@ function renderGallery() {
 }
 
 function renderContact() {
+  // Real, working <form> (plain HTML POST to Formspree -- no JS required)
+  // so the pre-hydration/no-JS snapshot has an actual lead-capture form, not
+  // just phone/email text. React's ContactForm (same Formspree endpoint,
+  // same fields) mounts over this and takes over on load for everyone with
+  // JS -- this is purely the pre-JS fallback, not a second form in parallel.
+  const serviceOptions = ALL_SERVICES.map(s => `<option value="${esc(s.name)}">${esc(s.name)}</option>`).join("");
+  const cityOptions = CITIES.map(c => `<option value="${esc(c.name)}">${esc(c.name)}</option>`).join("");
   const body = `
     <div class="page-hero"><div class="container">
       <h1>Contact Us</h1>
@@ -432,6 +462,16 @@ function renderContact() {
       <p>Email: commercialglassdmv@gmail.com</p>
       <p>Hours: Mon–Sat 7am–7pm. Emergency service available 24/7.</p>
       <p>Service area: All of Northern Virginia, Washington DC, and Maryland.</p>
+      <form action="https://formspree.io/f/mojzknjv" method="POST" class="static-contact-form">
+        <div class="form-group"><label>Your Name *</label><input type="text" name="name" required placeholder="John Smith" /></div>
+        <div class="form-group"><label>Phone Number *</label><input type="tel" name="phone" required placeholder="(202) 555-0000" /></div>
+        <div class="form-group"><label>Email Address</label><input type="email" name="email" placeholder="you@example.com" /></div>
+        <div class="form-group"><label>Service Needed</label><select name="service"><option value="">Select a service...</option>${serviceOptions}</select></div>
+        <div class="form-group"><label>City / Location</label><select name="city"><option value="">Select your city...</option>${cityOptions}</select></div>
+        <div class="form-group"><label>Describe the Issue *</label><textarea name="message" required placeholder="Please describe what needs to be repaired or replaced..."></textarea></div>
+        <input type="hidden" name="_next" value="${SITE}/contact" />
+        <button class="form-submit" type="submit">📨 Send My Request</button>
+      </form>
     </div></section>
   `;
   return {
@@ -520,7 +560,7 @@ function renderGeneratedPage(slug, entry) {
   `;
   return {
     path: `/pages/${slug}`,
-    title: `${title} | ${COMPANY}`,
+    title: generatedPageTitle(title),
     description: intro || (sections[0] && sections[0].body) || `${title} — serving Northern Virginia, Washington DC, and Maryland. Call ${PHONE} for a free estimate.`,
     schemas: [
       breadcrumbJsonLd(crumbs),

@@ -209,12 +209,63 @@ const P = {
   sh_gal3: "/images/sh_gal3.jpg"
 };
 
+// Every photo in public/images/ has a matching .webp (same basename) baked
+// at build time -- Photo serves it via <picture>/<source> so browsers that
+// support WebP get the smaller file and everyone else falls back to the
+// original .jpg, no JS or content negotiation required.
+function webpOf(src) {
+  return src.replace(/\.(jpe?g|png)$/i, ".webp");
+}
+function Photo({ src, alt, style, className, ...rest }) {
+  return (
+    <picture>
+      <source srcSet={webpOf(src)} type="image/webp" />
+      <img src={src} alt={alt} style={style} className={className} loading="lazy" {...rest} />
+    </picture>
+  );
+}
+
 
 
 const PHONE = "(202) 929-2890";
 const PHONE_HREF = "tel:+12029292890";
 const COMPANY = "Commercial Glass Door & Window Repair Services";
+const COMPANY_SHORT = "Commercial Glass Door & Window Repair";
 const TAGLINE = "NORTHERN VIRGINIA'S GLASS EXPERTS";
+
+// Google truncates displayed titles at roughly this many characters -- every
+// title builder below enforces this so nothing gets cut off mid-word or
+// mid-phrase in search results.
+const MAX_TITLE_LEN = 60;
+
+// Truncates at the last word boundary at or before maxLen, never mid-word.
+function truncateTitle(str, maxLen = MAX_TITLE_LEN) {
+  if (str.length <= maxLen) return str;
+  const cut = str.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(" ");
+  return (lastSpace > maxLen * 0.6 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
+// Builds the <title> for a pipeline-generated /pages/<slug> page. The AI-
+// written title is often already 70-80+ chars and sometimes already contains
+// the brand name, so this never blindly appends a brand suffix on top of
+// one that's already there -- it only adds one when there's room and the
+// title doesn't already read as branded, then always enforces MAX_TITLE_LEN.
+function generatedPageTitle(rawTitle) {
+  const raw = (rawTitle || "").trim();
+  const hasBrand = /commercial glass|window repair/i.test(raw);
+  if (hasBrand) return truncateTitle(raw);
+  const withSuffix = `${raw} | ${COMPANY_SHORT}`;
+  return withSuffix.length <= MAX_TITLE_LEN ? withSuffix : truncateTitle(raw);
+}
+
+function servicePageTitle(svcName) {
+  return truncateTitle(`${svcName} | Northern VA, DC & MD | ${COMPANY_SHORT}`);
+}
+
+function cityPageTitle(cityName, state) {
+  return truncateTitle(`Commercial Glass Repair in ${cityName}, ${state} | ${COMPANY_SHORT}`);
+}
 
 const COLORS = {
   primary: "#0F4C81",
@@ -729,7 +780,7 @@ function PhotoBox({ label, className = "", style = {}, src = null }) {
   if (src) {
     return (
       <div className={`photo-box ${className}`} style={{ minHeight: 160, padding: 0, overflow: "hidden", ...style }}>
-        <img src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+        <Photo src={src} alt={label} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       </div>
     );
   }
@@ -1035,7 +1086,7 @@ function HomePage({ setPage }) {
                   style={{ aspectRatio: "4/3", borderRadius: 8, overflow: "hidden", cursor: "pointer", boxShadow: "0 2px 12px rgba(0,0,0,0.1)", transition: "transform 0.2s, box-shadow 0.2s", display: "block" }}
                   onMouseEnter={e => { e.currentTarget.style.transform="scale(1.03)"; e.currentTarget.style.boxShadow="0 8px 24px rgba(0,0,0,0.2)"; }}
                   onMouseLeave={e => { e.currentTarget.style.transform="scale(1)"; e.currentTarget.style.boxShadow="0 2px 12px rgba(0,0,0,0.1)"; }}>
-                  <img src={photo.src} alt={photo.alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+                  <Photo src={photo.src} alt={photo.alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
                 </Link>
               ))}
             </div>
@@ -1148,14 +1199,7 @@ function HomePage({ setPage }) {
             {BLOG_POSTS.slice(0, 3).map(p => (
               <Link key={p.key} to="/blog" className="blog-card">
                 <div className="blog-img" style={{padding:0,overflow:"hidden",height:200}}>
-                  <img src={
-                    p.key === 'how-to-choose' ? P.sf1 :
-                    p.key === 'emergency-boardup-guide' ? P.em1 :
-                    p.key === 'frameless-shower-cost' ? P.sh_hero1 :
-                    p.key === 'storefront-glass-types' ? P.sf3 :
-                    p.key === 'maintain-commercial-doors' ? P.dr1 :
-                    p.key === 'nova-glass-laws' ? P.sf8 : P.hero1
-                  } alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
+                  <Photo src={blogImage(p.key)} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
                 </div>
                 <div className="blog-content">
                   <div className="blog-cat">{p.cat}</div>
@@ -1199,7 +1243,7 @@ function ServicePage({ svc, setPage }) {
   const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
 
   useSEO({
-    title: `${svc.name} in Northern Virginia, DC & Maryland | ${COMPANY} | ${PHONE}`,
+    title: servicePageTitle(svc.name),
     description: `${svc.desc} Licensed, insured, and serving Northern Virginia, Washington DC, and Maryland. Free estimates — call ${PHONE}.`,
     path: `/service/${svc.key}`,
   });
@@ -1345,7 +1389,7 @@ function CityPage({ city, setPage }) {
   const crumbs = [{ label: "Home", to: "/" }, { label: "Service Areas", to: "/#service-areas" }, { label: `${city.name}, ${city.state}`, to: `/city/${city.key}` }];
 
   useSEO({
-    title: `Commercial Glass Repair in ${city.name}, ${city.state} | ${COMPANY} | ${PHONE}`,
+    title: cityPageTitle(city.name, city.state),
     description: `Commercial glass door & window repair in ${city.name}, ${city.state} — storefront glass, commercial doors, emergency board-up, and more. Licensed, insured, same-day service. Call ${PHONE}.`,
     path: `/city/${city.key}`,
   });
@@ -1608,11 +1652,10 @@ function GalleryPage() {
                 onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.03)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(0,0,0,0.22)"; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.12)"; }}
               >
-                <img
+                <Photo
                   src={P[key]}
                   alt={GAL_ALT[key] || "Glass repair project Northern Virginia"}
                   style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-                  loading="lazy"
                 />
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "linear-gradient(transparent, rgba(0,0,0,0.55))", padding: "20px 10px 8px", color: "#fff", fontSize: 11, fontWeight: 600 }}>
                   {GAL_ALT[key] || "Glass repair project"}
@@ -1630,11 +1673,12 @@ function GalleryPage() {
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
         >
           <button onClick={() => setLightbox(null)} style={{ position: "absolute", top: 16, right: 20, background: "none", border: "none", color: "#fff", fontSize: 36, cursor: "pointer", lineHeight: 1 }}>✕</button>
-          <img
+          <Photo
             src={P[lightbox]}
             alt={GAL_ALT[lightbox]}
             style={{ maxWidth: "100%", maxHeight: "90vh", objectFit: "contain", borderRadius: 8, boxShadow: "0 0 60px rgba(0,0,0,0.5)" }}
             onClick={e => e.stopPropagation()}
+            loading="eager"
           />
           <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, textAlign: "center", color: "rgba(255,255,255,0.8)", fontSize: 13, fontWeight: 600 }}>
             {GAL_ALT[lightbox]} · Tap outside to close
@@ -1686,7 +1730,7 @@ function BlogPage({ setPage }) {
             {BLOG_POSTS.map(p => (
               <Link key={p.key} to={`/blog/${p.key}`} className="blog-card">
                 <div className="blog-img" style={{padding:0,overflow:"hidden",height:200}}>
-                  <img src={blogImage(p.key)} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} loading="lazy" />
+                  <Photo src={blogImage(p.key)} alt={p.title} style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
                 </div>
                 <div className="blog-content">
                   <div className="blog-cat">{p.cat}</div>
@@ -1748,7 +1792,7 @@ function BlogPostPage({ post }) {
           <div className="service-content">
             <div className="service-body">
               <div style={{ borderRadius: 8, overflow: "hidden", marginBottom: 24, maxHeight: 320 }}>
-                <img src={blogImage(post.key)} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} loading="lazy" />
+                <Photo src={blogImage(post.key)} alt={post.title} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
               </div>
               {(post.sections || []).map((s, i) => (
                 <div key={i}>
@@ -2090,7 +2134,7 @@ function FoggyWindowPage({ setPage }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
             {[P.res1, P.res2, P.res3, P.res4, P.res5, P.res6, P.res7, P.res8].filter(Boolean).map((src, i) => (
               <div key={i} style={{ aspectRatio: "4/3", borderRadius: 8, overflow: "hidden" }}>
-                <img src={src} alt="Residential window glass repair Northern Virginia" style={{ width: "100%", height: "100%", objectFit: "cover" }} loading="lazy" />
+                <Photo src={src} alt="Residential window glass repair Northern Virginia" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
             ))}
           </div>
@@ -2401,7 +2445,7 @@ function GeneratedPage({ entry, slug, setPage }) {
   ];
 
   useSEO({
-    title: `${title} | ${COMPANY}`,
+    title: generatedPageTitle(title),
     description: intro || (sections[0] && sections[0].body) || `${title} — serving Northern Virginia, Washington DC, and Maryland. Call ${PHONE} for a free estimate.`,
     path: `/pages/${slug}`,
   });
@@ -2455,7 +2499,7 @@ function GeneratedPage({ entry, slug, setPage }) {
 
       {heroImage && (
         <div className="gen-hero-image">
-          <img src={heroImage} alt={heroImageAlt} loading="lazy" />
+          <Photo src={heroImage} alt={heroImageAlt} />
         </div>
       )}
 
