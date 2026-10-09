@@ -213,15 +213,21 @@ function renderService(svc) {
   const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
   const category = serviceCategory(svc);
   const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
+  // Residential services link out to the residential (Foggy City) area pages,
+  // not the commercial city hubs -- commercial and shower services keep the
+  // commercial city list, since there's no dedicated shower area page.
+  const isResidential = category.label === "Residential Glass Services";
+  const areaLinks = isResidential ? FOGGY_CITIES : CITIES;
+  const areaBasePath = isResidential ? "/foggy-city" : "/city";
   const body = `
     <div class="page-hero"><div class="container">
       ${breadcrumbsHtml(crumbs)}
-      <h1>${esc(svc.name)} in Northern Virginia, DC &amp; Maryland</h1>
-      <p>Professional ${esc(svc.name.toLowerCase())} serving Northern Virginia, Washington DC, and Maryland — Alexandria, Arlington, Fairfax, McLean, Bethesda, and beyond. Licensed, insured, and fast.</p>
+      <h1>${esc(svc.name)} in Northern Virginia${isResidential ? "" : ", DC &amp; Maryland"}</h1>
+      <p>Professional ${esc(svc.name.toLowerCase())} serving ${isResidential ? "Northern Virginia — Alexandria, Arlington, Fairfax, McLean, and beyond" : "Northern Virginia, Washington DC, and Maryland — Alexandria, Arlington, Fairfax, McLean, Bethesda, and beyond"}. Licensed, insured, and fast.</p>
     </div></div>
     <section class="section"><div class="container"><div class="service-content"><div class="service-body">
       <h2>About Our ${esc(svc.name)} Service</h2>
-      <p>${esc(svc.desc)} Our licensed technicians serve homeowners and businesses in Alexandria, Arlington, Fairfax, McLean, Bethesda, and Washington DC — and every surrounding community throughout Northern Virginia, DC, and Maryland.</p>
+      <p>${esc(svc.desc)} Our licensed technicians serve ${isResidential ? "homeowners in Alexandria, Arlington, Fairfax, McLean, and every surrounding community throughout Northern Virginia" : "homeowners and businesses in Alexandria, Arlington, Fairfax, McLean, Bethesda, and Washington DC — and every surrounding community throughout Northern Virginia, DC, and Maryland"}.</p>
       <p>When you call us for ${esc(svc.name.toLowerCase())}, you can expect a fast response, honest pricing, and high-quality workmanship backed by our satisfaction guarantee. We use only premium materials from trusted manufacturers.
       ${svc.key !== "emergency-boardup" ? ` If your glass is damaged outside business hours, our <a href="/service/emergency-boardup">emergency commercial glass repair and board-up service</a> can secure the opening until replacement glass is ready.` : ""}
       Ready to move forward? <a href="/contact">Request a free quote</a> and we'll get back to you fast.</p>
@@ -232,11 +238,11 @@ function renderService(svc) {
         <li>Free estimates — no surprise charges</li>
         <li>All commercial and residential brands serviced</li>
         <li>24/7 emergency service for urgent repairs</li>
-        <li>Serving all of Northern Virginia, Washington DC, and Maryland</li>
+        <li>Serving all of Northern Virginia${isResidential ? "" : ", Washington DC, and Maryland"}</li>
       </ul>
       <h2>Service Areas</h2>
-      <p>We provide ${esc(svc.name.toLowerCase())} throughout Northern Virginia, Washington DC, and Maryland, including:</p>
-      ${pillsHtml(CITIES, c => `/city/${c.key}`, c => c.name)}
+      <p>We provide ${esc(svc.name.toLowerCase())} throughout Northern Virginia${isResidential ? "" : ", Washington DC, and Maryland"}, including:</p>
+      ${pillsHtml(areaLinks, c => `${areaBasePath}/${c.key}`, c => c.name)}
       ${featuredLocations.length > 0 ? `
       <h2>${esc(svc.name)} — Featured Locations</h2>
       <p>Read our local guides for ${esc(svc.name.toLowerCase())} in these communities:</p>
@@ -244,7 +250,7 @@ function renderService(svc) {
       <h2>Related Services</h2>
       ${linkListHtml(otherServices, s => `/service/${s.key}`, s => s.name)}
     </div></div></div></section>
-    ${ctaSectionHtml(`Need ${svc.name}?`, "Call now for a fast, free estimate. We serve all of Northern Virginia, Washington DC, and Maryland.")}
+    ${ctaSectionHtml(`Need ${svc.name}?`, `Call now for a fast, free estimate. We serve all of Northern Virginia${isResidential ? "" : ", Washington DC, and Maryland"}.`)}
   `;
   return {
     path: `/service/${svc.key}`,
@@ -259,7 +265,7 @@ function renderService(svc) {
         name: svc.name,
         description: svc.desc,
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-        areaServed: CITIES.map(c => `${c.name}, ${c.state}`),
+        areaServed: isResidential ? FOGGY_CITIES.map(c => `${c.name}, VA`) : CITIES.map(c => `${c.name}, ${c.state}`),
         url: `${SITE}/service/${svc.key}`,
       },
     ],
@@ -283,9 +289,8 @@ function renderCity(city) {
       <p>Businesses in ${esc(city.name)} depend on clean, secure storefront glass to attract customers and protect their assets. Our commercial glass services in ${esc(city.name)} include everything from <a href="/service/emergency-boardup">emergency board-up</a> to full storefront installation.</p>
       ${city.blurb ? `<p>${esc(city.blurb)}</p>` : ""}
       ${linkListHtml(COMMERCIAL_SERVICES, s => `/service/${s.key}`, s => s.name)}
-      <h2>Residential Glass in ${esc(city.name)}</h2>
-      <p>We also serve homeowners in ${esc(city.name)} with window glass repair, replacement, and custom frameless shower doors.</p>
-      ${linkListHtml([...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES], s => `/service/${s.key}`, s => s.name)}
+      <h2>Also Serving ${esc(city.name)} Homeowners</h2>
+      <p>We also do residential glass work in ${esc(city.name)} — see our <a href="/foggy-window">foggy window repair</a> services or <a href="/service/frameless-shower">frameless shower doors</a>.</p>
       <h2>Why ${esc(city.name)} Businesses Choose Us</h2>
       <ul>
         <li>Fastest response time in ${esc(city.county)}</li>
@@ -329,21 +334,26 @@ function renderFoggyCity(city) {
   const services = ["Foggy window repair", "Broken window seal replacement", "Condensation between panes fix", "Double pane glass replacement", "Triple pane IGU replacement", "Low-E glass upgrade", "Residential window glass repair", "Insulated glass unit replacement"];
   const crumbs = [{ label: "Home", to: "/" }, { label: "Foggy Window Repair", to: "/foggy-window" }, { label: city.name, to: `/foggy-city/${city.key}` }];
   const otherAreas = FOGGY_CITIES.filter(c => c.key !== city.key).slice(0, 8);
+  const faq = city.faq || [];
+  const faqHtml = faq.length > 0
+    ? `<h2>${esc(city.name)} Foggy Window FAQ</h2>` + faq.map(f => `<div style="margin-bottom:16px"><h3 style="font-size:15px;color:#0F4C81;margin-bottom:4px">${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`).join("")
+    : "";
   const body = `
     <div class="page-hero"><div class="container">
       ${breadcrumbsHtml(crumbs)}
-      <h1>Foggy Window Repair in ${esc(city.name)}, VA</h1>
-      <p>Professional foggy window repair and insulated glass unit replacement for homeowners in ${esc(city.name)}, ${esc(city.county)}. We fix cloudy, hazy, and moisture-damaged windows without replacing the whole window.</p>
+      <h1>Foggy Window Repair &amp; Glass Replacement in ${esc(city.name)}, VA</h1>
+      <p>Professional foggy window repair and insulated glass unit replacement for homeowners near ${esc(city.landmarks)}. We fix cloudy, hazy, and moisture-damaged windows without replacing the whole window.</p>
     </div></div>
     <section class="section"><div class="container"><div class="service-content"><div class="service-body">
       <h2>Foggy Window Repair in ${esc(city.name)}</h2>
-      <p>If you're seeing foggy, cloudy, or hazy glass in your ${esc(city.name)} home, the problem is almost always a failed window seal — not dirty glass. Homeowners across ${esc(city.name)} and ${esc(city.county)} call us when they notice condensation or moisture trapped between their window panes.</p>
+      <p>If you're seeing foggy, cloudy, or hazy glass in your ${esc(city.name)} home, the problem is almost always a failed window seal — not dirty glass. Homeowners near ${esc(city.landmarks)} call us when they notice condensation or moisture trapped between their window panes.</p>
       <p>The good news: in most cases, you don't need to replace the entire window. We replace only the insulated glass unit (IGU) inside your existing frame — saving ${esc(city.name)} homeowners 60–80% compared to full window replacement.</p>
       <h2>Foggy Window Services in ${esc(city.name)}</h2>
       ${plainListHtml(services)}
-      <h2>What Causes Foggy Windows in ${esc(city.name)} Homes?</h2>
-      <p>The Northern Virginia climate — with its hot humid summers and cold winters — puts significant stress on window seals. The repeated expansion and contraction of window frames causes seals to break down over time. Once the hermetic seal of your insulated glass unit fails, outside humid air enters between the panes and creates that characteristic foggy, cloudy appearance.</p>
-      <p>This is 100% a broken window seal issue. The condensation you see cannot be cleaned away because it's inside the sealed unit. The only fix is insulated glass unit replacement — and that's our specialty in ${esc(city.name)}.</p>
+      <h2>Why ${esc(city.name)} Homes See This So Often</h2>
+      <p>${esc(city.housingNote)}</p>
+      <p>The Northern Virginia climate — with its hot humid summers and cold winters — puts significant stress on window seals everywhere in the region. Once the hermetic seal of your insulated glass unit fails, outside humid air enters between the panes and creates that characteristic foggy, cloudy appearance. This is 100% a broken window seal issue, not dirty glass — the condensation can't be cleaned away because it's inside the sealed unit.</p>
+      ${faqHtml}
       <h2>Why ${esc(city.name)} Homeowners Choose Us</h2>
       <ul>
         <li>We replace only the IGU — not the whole window — saving you money</li>
@@ -361,9 +371,16 @@ function renderFoggyCity(city) {
   `;
   return {
     path: `/foggy-city/${city.key}`,
-    title: `Foggy Window Repair in ${city.name}, VA | ${PHONE}`,
-    description: `Foggy or cloudy windows in ${city.name}, VA? We replace only the failed insulated glass unit — no full window replacement needed. Free estimates, same-day service available.`,
-    schemas: [breadcrumbJsonLd(crumbs)],
+    title: `Foggy Window & Glass Repair in ${city.name}, VA`,
+    description: `Foggy or cloudy windows in ${city.name}, VA? We replace the failed insulated glass unit — no full window replacement needed. Serving ${city.landmarks}. Free estimates.`,
+    schemas: [
+      breadcrumbJsonLd(crumbs),
+      faq.length > 0 && {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: faq.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+    ],
     body,
   };
 }
@@ -523,13 +540,16 @@ function renderFoggyWindow() {
 function renderGeneratedPage(slug, entry) {
   const { title, intro, sections = [], faq = [], cta, keyword, service, city } = entry;
   const svc = ALL_SERVICES.find(s => s.key === service);
-  const cityObj = CITIES.find(c => c.key === city);
+  const isResidentialSvc = RESIDENTIAL_SERVICES.some(s => s.key === service);
+  const foggyCityObj = isResidentialSvc ? FOGGY_CITIES.find(c => c.key === city) : null;
+  const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
+  const cityPath = foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null;
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
   const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
   const crumbs = [
     { label: "Home", to: "/" },
     ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
-    ...(cityObj ? [{ label: cityObj.name, to: `/city/${cityObj.key}` }] : []),
+    ...(cityObj && cityPath ? [{ label: cityObj.name, to: cityPath }] : []),
     { label: title, to: `/pages/${slug}` },
   ];
   const areaLabel = serviceAreaLabel(cityObj);
@@ -550,7 +570,7 @@ function renderGeneratedPage(slug, entry) {
       <h2>Related Services &amp; Areas</h2>
       <p>
         ${svc ? `Learn more about our <a href="/service/${esc(svc.key)}">${esc(svc.name.toLowerCase())}</a> services. ` : ""}
-        ${cityObj ? `See everything we offer throughout <a href="/city/${esc(cityObj.key)}">${esc(cityObj.name)}, VA</a>. ` : ""}
+        ${cityObj && cityPath ? `See everything we offer throughout <a href="${esc(cityPath)}">${esc(cityObj.name)}, ${esc(cityObj.state || "VA")}</a>. ` : ""}
         ${emergencyService && service !== emergencyService.key ? `Need immediate service? Visit our <a href="/service/${esc(emergencyService.key)}">Emergency Commercial Glass Repair</a> page. ` : ""}
         Ready to get started? <a href="/contact">Request a free quote</a> and we'll get back to you fast.
       </p>
@@ -571,7 +591,7 @@ function renderGeneratedPage(slug, entry) {
         name: title,
         description: intro || svc.desc,
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-        areaServed: cityObj ? `${cityObj.name}, ${cityObj.state}` : CITIES.map(c => `${c.name}, ${c.state}`),
+        areaServed: cityObj ? `${cityObj.name}, ${cityObj.state || "VA"}` : CITIES.map(c => `${c.name}, ${c.state}`),
         url: `${SITE}/pages/${slug}`,
       },
       faq.length > 0 && {
