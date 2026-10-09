@@ -540,13 +540,16 @@ function renderFoggyWindow() {
 function renderGeneratedPage(slug, entry) {
   const { title, intro, sections = [], faq = [], cta, keyword, service, city } = entry;
   const svc = ALL_SERVICES.find(s => s.key === service);
-  const cityObj = CITIES.find(c => c.key === city);
+  const isResidentialSvc = RESIDENTIAL_SERVICES.some(s => s.key === service);
+  const foggyCityObj = isResidentialSvc ? FOGGY_CITIES.find(c => c.key === city) : null;
+  const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
+  const cityPath = foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null;
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
   const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
   const crumbs = [
     { label: "Home", to: "/" },
     ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
-    ...(cityObj ? [{ label: cityObj.name, to: `/city/${cityObj.key}` }] : []),
+    ...(cityObj && cityPath ? [{ label: cityObj.name, to: cityPath }] : []),
     { label: title, to: `/pages/${slug}` },
   ];
   const areaLabel = serviceAreaLabel(cityObj);
@@ -567,7 +570,7 @@ function renderGeneratedPage(slug, entry) {
       <h2>Related Services &amp; Areas</h2>
       <p>
         ${svc ? `Learn more about our <a href="/service/${esc(svc.key)}">${esc(svc.name.toLowerCase())}</a> services. ` : ""}
-        ${cityObj ? `See everything we offer throughout <a href="/city/${esc(cityObj.key)}">${esc(cityObj.name)}, VA</a>. ` : ""}
+        ${cityObj && cityPath ? `See everything we offer throughout <a href="${esc(cityPath)}">${esc(cityObj.name)}, ${esc(cityObj.state || "VA")}</a>. ` : ""}
         ${emergencyService && service !== emergencyService.key ? `Need immediate service? Visit our <a href="/service/${esc(emergencyService.key)}">Emergency Commercial Glass Repair</a> page. ` : ""}
         Ready to get started? <a href="/contact">Request a free quote</a> and we'll get back to you fast.
       </p>
@@ -588,7 +591,7 @@ function renderGeneratedPage(slug, entry) {
         name: title,
         description: intro || svc.desc,
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-        areaServed: cityObj ? `${cityObj.name}, ${cityObj.state}` : CITIES.map(c => `${c.name}, ${c.state}`),
+        areaServed: cityObj ? `${cityObj.name}, ${cityObj.state || "VA"}` : CITIES.map(c => `${c.name}, ${c.state}`),
         url: `${SITE}/pages/${slug}`,
       },
       faq.length > 0 && {

@@ -2575,15 +2575,20 @@ function GeneratedPage({ entry, slug, setPage }) {
   const { title, intro, sections = [], faq = [], cta, keyword, service, city } = entry;
   // service/city are canonical keys (see buildGeneratedIndex above) — resolving
   // them here is what lets every generated page automatically link back to its
-  // real service/city hub with no manual wiring per page.
+  // real service/city hub with no manual wiring per page. A residential-service
+  // page links to its Foggy City page (the residential-appropriate hub) when
+  // that city has one, falling back to the commercial city hub otherwise.
   const svc = ALL_SERVICES.find(s => s.key === service);
-  const cityObj = CITIES.find(c => c.key === city);
+  const isResidentialSvc = RESIDENTIAL_SERVICES.some(s => s.key === service);
+  const foggyCityObj = isResidentialSvc ? FOGGY_CITIES.find(c => c.key === city) : null;
+  const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
+  const cityPath = foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null;
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
   const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
   const crumbs = [
     { label: "Home", to: "/" },
     ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
-    ...(cityObj ? [{ label: cityObj.name, to: `/city/${cityObj.key}` }] : []),
+    ...(cityObj && cityPath ? [{ label: cityObj.name, to: cityPath }] : []),
     { label: title, to: `/pages/${slug}` },
   ];
 
@@ -2601,7 +2606,7 @@ function GeneratedPage({ entry, slug, setPage }) {
       name: title,
       description: intro || svc.desc,
       provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-      areaServed: cityObj ? `${cityObj.name}, ${cityObj.state}` : CITIES.map(c => `${c.name}, ${c.state}`),
+      areaServed: cityObj ? `${cityObj.name}, ${cityObj.state || "VA"}` : CITIES.map(c => `${c.name}, ${c.state}`),
       url: `${SITE}/pages/${slug}`,
     },
     faq.length > 0 && {
@@ -2619,7 +2624,7 @@ function GeneratedPage({ entry, slug, setPage }) {
   const numBodyPhotos = Math.min(3, Math.max(0, sections.length - 2));
   const pagePhotos = getGeneratedPageImages(service, slug, numBodyPhotos + 1, entry.image_key);
   const heroImage = pagePhotos[0];
-  const heroImageAlt = `${svc ? svc.name : title}${cityObj ? ` in ${cityObj.name}, ${cityObj.state}` : ""} — professional service`;
+  const heroImageAlt = `${svc ? svc.name : title}${cityObj ? ` in ${cityObj.name}, ${cityObj.state || "VA"}` : ""} — professional service`;
   const inlineImages = pagePhotos.slice(1);
   const imagePositions = new Set();
   for (let k = 0; k < inlineImages.length; k++) {
@@ -2710,7 +2715,7 @@ function GeneratedPage({ entry, slug, setPage }) {
               <h2>Related Services &amp; Areas</h2>
               <p>
                 {svc && <>Learn more about our <Link to={`/service/${svc.key}`}>{svc.name.toLowerCase()}</Link> services. </>}
-                {cityObj && <>See everything we offer throughout <Link to={`/city/${cityObj.key}`}>{cityObj.name}, VA</Link>. </>}
+                {cityObj && cityPath && <>See everything we offer throughout <Link to={cityPath}>{cityObj.name}, {cityObj.state || "VA"}</Link>. </>}
                 {emergencyService && service !== emergencyService.key && <>Need immediate service? Visit our <Link to={`/service/${emergencyService.key}`}>Emergency Commercial Glass Repair</Link> page. </>}
                 Ready to get started? <Link to="/contact">Request a free quote</Link> and we'll get back to you fast.
               </p>
@@ -2745,7 +2750,7 @@ function GeneratedPage({ entry, slug, setPage }) {
                   <h3>About This Page</h3>
                   <p style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>
                     {svc && <>Service: <Link to={`/service/${svc.key}`} style={{ color: "#FFD700" }}>{svc.name}</Link><br /></>}
-                    {cityObj && <>Area: <Link to={`/city/${cityObj.key}`} style={{ color: "#FFD700" }}>{cityObj.name}</Link></>}
+                    {cityObj && cityPath && <>Area: <Link to={cityPath} style={{ color: "#FFD700" }}>{cityObj.name}</Link></>}
                   </p>
                 </div>
               )}
