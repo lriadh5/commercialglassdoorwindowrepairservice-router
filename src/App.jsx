@@ -331,24 +331,147 @@ const RESIDENTIAL_SERVICES = [
   { key: "arch-windows", name: "Arch Window Replacement", desc: "Custom-cut glass for arch, circle, and specialty-shaped windows in Northern Virginia homes." },
 ];
 
+// Each entry's `landmarks`/`housingNote`/`faq` are genuinely unique per city
+// (real neighborhoods, real local housing-stock history, city-specific
+// questions) -- not a shared template with the city name swapped in. See
+// FoggyCityPage / renderFoggyCity for how these render.
 const FOGGY_CITIES = [
-  { key: "alexandria", name: "Alexandria", county: "Alexandria City", zip: "22301" },
-  { key: "arlington", name: "Arlington", county: "Arlington County", zip: "22201" },
-  { key: "fairfax", name: "Fairfax", county: "Fairfax County", zip: "22030" },
-  { key: "springfield", name: "Springfield", county: "Fairfax County", zip: "22150" },
-  { key: "burke", name: "Burke", county: "Fairfax County", zip: "22015" },
-  { key: "annandale", name: "Annandale", county: "Fairfax County", zip: "22003" },
-  { key: "fallschurch", name: "Falls Church", county: "Falls Church City", zip: "22041" },
-  { key: "mclean", name: "McLean", county: "Fairfax County", zip: "22101" },
-  { key: "vienna", name: "Vienna", county: "Fairfax County", zip: "22180" },
-  { key: "reston", name: "Reston", county: "Fairfax County", zip: "20190" },
-  { key: "herndon", name: "Herndon", county: "Fairfax County", zip: "20170" },
-  { key: "chantilly", name: "Chantilly", county: "Fairfax County", zip: "20151" },
-  { key: "centreville", name: "Centreville", county: "Fairfax County", zip: "20120" },
-  { key: "ashburn", name: "Ashburn", county: "Loudoun County", zip: "20147" },
-  { key: "leesburg", name: "Leesburg", county: "Loudoun County", zip: "20175" },
-  { key: "sterling", name: "Sterling", county: "Loudoun County", zip: "20164" },
-  { key: "manassas", name: "Manassas", county: "Prince William County", zip: "20110" },
+  { key: "alexandria", name: "Alexandria", county: "Alexandria City", zip: "22301",
+    landmarks: "Old Town, Del Ray, and the West End",
+    housingNote: "Old Town's historic rowhouses often have older replacement windows installed to meet the historic district's appearance standards, while Del Ray and the West End have more mid-century single-family homes and newer condo buildings near Potomac Yard — each with its own typical window age.",
+    faq: [
+      { q: "Do historic-district rules in Old Town affect glass replacement?", a: "Replacing just the glass unit inside your existing frame typically doesn't trigger Old Town's exterior-appearance review the way a full window replacement can, since the frame and sash stay the same. We can talk through your specific property if you're unsure." },
+      { q: "Do you work in Del Ray and the West End too?", a: "Yes — Old Town, Del Ray, and the West End are all regular service areas for us in Alexandria." },
+      { q: "My condo near Potomac Yard has foggy windows — is that different from a single-family home?", a: "The glass and seal issue is the same, but condo and HOA buildings sometimes have rules about who handles window glass. We can work with your building management if needed." },
+    ] },
+  { key: "arlington", name: "Arlington", county: "Arlington County", zip: "22201",
+    landmarks: "the high-rise corridors near Rosslyn, Ballston, and Clarendon, and the older residential neighborhoods like Lyon Village and Westover",
+    housingNote: "Arlington has two very different window situations: condo and high-rise units near Rosslyn, Ballston, and Clarendon with large sealed glass units, and single-family homes in neighborhoods like Lyon Village and Westover that date largely to the 1940s-60s post-war building boom, many already on a second or third generation of replacement windows.",
+    faq: [
+      { q: "I'm in a condo near Rosslyn or Ballston — can you still help?", a: "Yes, we service condo and high-rise units throughout Arlington's Metro corridor, though some buildings require coordination with building management for exterior-facing glass work." },
+      { q: "My house in Lyon Village or Westover already has replacement windows — why is it foggy again?", a: "A lot of Arlington's post-war neighborhoods got a first round of replacement windows years ago, and those seals have the same lifespan as original ones. A second glass-only replacement is usually still cheaper than full window replacement." },
+      { q: "Do you serve all of Arlington or just the Metro corridor?", a: "All of Arlington County, from the high-rise corridor to the residential neighborhoods further out." },
+    ] },
+  { key: "fairfax", name: "Fairfax", county: "Fairfax County", zip: "22030",
+    landmarks: "Old Town Fairfax, Fairfax Circle, and the neighborhoods around George Mason University",
+    housingNote: "Homes near Old Town Fairfax and Fairfax Circle tend to be older, while the area around George Mason University has a mix of starter homes from the area's mid-century growth and newer infill construction — the older stock is the segment we see failed seals in most often.",
+    faq: [
+      { q: "Do you service homes near George Mason University?", a: "Yes, including the neighborhoods around GMU and throughout the City of Fairfax." },
+      { q: "Is Fairfax City different from Fairfax County for your service area?", a: "No — we cover both the independent City of Fairfax and the surrounding Fairfax County area." },
+      { q: "How do I know if it's my whole house or just one window?", a: "Seal failure happens window-by-window, not all at once — if your home's windows were all installed the same year, it's common to see one or two fail first and the rest follow over the next several years." },
+    ] },
+  { key: "springfield", name: "Springfield", county: "Fairfax County", zip: "22150",
+    landmarks: "West Springfield and the neighborhoods near the Capital Beltway's Springfield interchange",
+    housingNote: "Much of residential Springfield, including West Springfield, was built out during the 1960s-80s suburban expansion along the Beltway — split-level and colonial-style homes from that era are a common source of the foggy-window calls we get here.",
+    faq: [
+      { q: "Is split-level window replacement different from other home styles?", a: "Not for the glass itself — split-levels just mean more distinct window sizes per house than a typical single-story layout, which we account for when measuring." },
+      { q: "Do you serve West Springfield specifically?", a: "Yes, West Springfield is one of our regular service areas." },
+      { q: "My house is from the 1970s — is that too old for a glass-only fix?", a: "Not at all. As long as the frame itself is sound (not rotted or warped), age doesn't rule out a glass-only replacement — it's actually the most common situation we see." },
+    ] },
+  { key: "burke", name: "Burke", county: "Fairfax County", zip: "22015",
+    landmarks: "Burke Centre and the area around Burke Lake Park",
+    housingNote: "Burke Centre, one of the area's well-known planned communities built mostly in the 1970s-80s, accounts for a large share of Burke's housing stock — a lot of original windows from that build-out are now well past typical seal life.",
+    faq: [
+      { q: "Does Burke Centre have specific HOA rules about window glass?", a: "Some Burke Centre sections have HOA guidelines on window appearance — replacing just the glass unit in your existing frame typically doesn't change the exterior look, but we're happy to discuss your specific situation." },
+      { q: "Do you service homes near Burke Lake Park?", a: "Yes, that's a regular service area for us." },
+      { q: "Is foggy glass more common in Burke than nearby areas?", a: "It's roughly in line with other 1970s-80s Fairfax County communities — a lot of Burke Centre's original windows are reaching the same age at the same time, so it can feel more noticeable neighborhood-wide." },
+    ] },
+  { key: "annandale", name: "Annandale", county: "Fairfax County", zip: "22003",
+    landmarks: "the Little River Turnpike corridor and Annandale's established residential neighborhoods",
+    housingNote: "Annandale's housing stock is largely ramblers and split-levels from the 1950s-60s suburban boom, concentrated in neighborhoods off Little River Turnpike — among the oldest original-window housing stock in this part of Fairfax County.",
+    faq: [
+      { q: "My rambler has its original windows from the 1950s or 60s — can you still replace just the glass?", a: "In most cases, yes — as long as the original frame is structurally sound, we can fit a new insulated glass unit into it rather than replacing the whole window." },
+      { q: "Do you serve all of Annandale or just certain neighborhoods?", a: "All of Annandale, including the neighborhoods along and around Little River Turnpike." },
+      { q: "Is older original glass different to work with than a newer replacement window?", a: "Sometimes the frame dimensions are less standard on original 1950s-60s windows, so we measure carefully rather than assuming a stock size — but the glass replacement process itself is the same." },
+    ] },
+  { key: "fallschurch", name: "Falls Church", county: "Falls Church City", zip: "22041",
+    landmarks: "West Falls Church, East Falls Church, and the neighborhoods along the W&OD Trail",
+    housingNote: "As one of the smallest independent cities in Virginia, Falls Church has a tight, mostly older residential core — many homes near the W&OD Trail and the East/West Falls Church areas date to the mid-20th century, with windows that have typically already been through one replacement cycle.",
+    faq: [
+      { q: "Is Falls Church City different from the surrounding 'Falls Church' area in Fairfax County?", a: "We serve both — the independent City of Falls Church and the broader Falls Church-area neighborhoods in Fairfax County." },
+      { q: "Do you work near the W&OD Trail?", a: "Yes, homes along and near the W&OD Trail in Falls Church are a regular service area for us." },
+      { q: "My house already had replacement windows installed once — why is it foggy again already?", a: "If that replacement happened more than 15-20 years ago, the seal is simply reaching the end of its typical life — this is common in Falls Church's older replacement-window stock." },
+    ] },
+  { key: "mclean", name: "McLean", county: "Fairfax County", zip: "22101",
+    landmarks: "the Chain Bridge Road corridor and McLean's established residential neighborhoods",
+    housingNote: "McLean has one of the widest ranges of window age in Northern Virginia — long-established neighborhoods with original or first-generation replacement windows sit alongside newer custom-built and rebuilt homes, so we see everything from decades-old original glass to recently installed units already showing early seal issues.",
+    faq: [
+      { q: "My home is a custom build — do you handle non-standard window sizes?", a: "Yes, custom and oversized window glass is common work for us in McLean; we measure each opening individually rather than assuming a standard size." },
+      { q: "Can newer windows fail too, or is this only an older-home issue?", a: "Seal failure can happen within the first decade on some units, especially lower-quality replacement glass, so it's not exclusively an older-home problem — though it's more common past the 15-20 year mark." },
+      { q: "Do you serve all of McLean including the areas near Chain Bridge Road?", a: "Yes, all of McLean's residential neighborhoods." },
+    ] },
+  { key: "vienna", name: "Vienna", county: "Fairfax County", zip: "22180",
+    landmarks: "the Maple Avenue area, Vienna's historic district, and the neighborhoods along the W&OD Trail",
+    housingNote: "Vienna mixes an historic in-town core near Maple Avenue — where homes can be considerably older — with surrounding mid-to-late-20th-century subdivisions, so the typical seal-failure age we see varies quite a bit block to block.",
+    faq: [
+      { q: "Does Vienna's historic district have rules about window replacement?", a: "Glass-only replacement inside your existing frame generally doesn't change the exterior appearance the way a full window swap can, which is usually the main concern in historic-adjacent areas — we can discuss your specific property." },
+      { q: "Do you service homes along the W&OD Trail in Vienna?", a: "Yes, that's a regular service area for us." },
+      { q: "How is Vienna different from nearby Oakton or Fairfax for this kind of repair?", a: "The repair itself is the same everywhere — what differs is typical housing age, and Vienna's in-town core tends to be older than some of the surrounding newer subdivisions." },
+    ] },
+  { key: "reston", name: "Reston", county: "Fairfax County", zip: "20190",
+    landmarks: "Lake Anne Plaza, Reston Town Center, and the South Lakes area",
+    housingNote: "Reston was one of the first planned communities in the country, built starting in 1964 around Lake Anne — a lot of homes in and around the original Lake Anne village, as well as South Lakes, now have windows well past 40-50 years old if they haven't already been replaced once, making Reston one of the areas where we see the oldest original window stock in Northern Virginia.",
+    faq: [
+      { q: "My home is near Lake Anne — is it likely to still have very old original windows?", a: "It's common. Lake Anne was Reston's original 1960s village center, and a meaningful share of the housing from that era either still has aging original glass or a first-generation replacement that's itself now decades old." },
+      { q: "Does Reston Association have rules about window appearance?", a: "Some Reston Association covenants address exterior appearance — glass-only replacement in your existing frame typically keeps the same look, but we're happy to talk through your specific cluster or neighborhood's guidelines." },
+      { q: "Do you service South Lakes and Reston Town Center area homes too?", a: "Yes, all of Reston." },
+    ] },
+  { key: "herndon", name: "Herndon", county: "Fairfax County", zip: "20170",
+    landmarks: "historic downtown Herndon and the neighborhoods along the W&OD Trail",
+    housingNote: "Downtown Herndon's historic core has some of the area's older homes, while the surrounding neighborhoods built up through the late 20th century as Dulles-area growth expanded — both segments are reaching typical seal-failure age, just for different reasons.",
+    faq: [
+      { q: "Do you service homes in historic downtown Herndon?", a: "Yes, downtown Herndon and the surrounding neighborhoods are a regular service area." },
+      { q: "Is proximity to Dulles Airport a factor in window wear?", a: "Not something we've seen evidence of — seal failure is driven by age and temperature cycling, not airport proximity or noise." },
+      { q: "How fast can you get someone out in Herndon?", a: "Same-day service is often available — call and we'll give you a specific estimate for your location." },
+    ] },
+  { key: "chantilly", name: "Chantilly", county: "Fairfax County", zip: "20151",
+    landmarks: "the area near the Smithsonian's Udvar-Hazy Center and Dulles Airport",
+    housingNote: "Chantilly's residential neighborhoods largely built up in the 1980s-90s alongside the area's growth near Dulles Airport — original windows from that build-out are now squarely in the typical seal-failure window.",
+    faq: [
+      { q: "Is Chantilly's housing mostly from a specific era?", a: "Yes, a large share dates to the 1980s-90s, which means a lot of original windows are reaching the same age around the same time." },
+      { q: "Do you serve areas near the Udvar-Hazy Center?", a: "Yes, that general area is within our regular Chantilly service area." },
+      { q: "Does airport-adjacent construction mean different window types?", a: "Not typically for standard residential construction — most Chantilly homes have conventional double-pane insulated glass units like the rest of the region." },
+    ] },
+  { key: "centreville", name: "Centreville", county: "Fairfax County", zip: "20120",
+    landmarks: "the Route 29 corridor, Braddock Road, and the Centreville Historic District",
+    housingNote: "Most of residential Centreville was built during the rapid 1980s-90s growth along Route 29, putting a large share of original windows at or past the typical 20-30 year seal-failure mark, while the small historic district near Braddock Road has its own older, mixed window stock.",
+    faq: [
+      { q: "Is Centreville's historic district different from the newer subdivisions for this kind of work?", a: "The historic district has older, more varied window sizes we measure individually; the newer subdivisions built in the 80s-90s tend to have more standardized builder-grade windows now reaching seal-failure age." },
+      { q: "Do you serve areas along Route 29 and Braddock Road?", a: "Yes, both are within our regular Centreville service area." },
+      { q: "My neighbors are also seeing foggy windows around the same time — is that normal?", a: "Very common — if a neighborhood was built out in the same few years, as most of 1980s-90s Centreville was, original windows tend to hit seal-failure age around the same time across the block." },
+    ] },
+  { key: "ashburn", name: "Ashburn", county: "Loudoun County", zip: "20147",
+    landmarks: "Broadlands, Brambleton, and the Loudoun County tech corridor sometimes called 'Data Center Alley'",
+    housingNote: "Ashburn's residential growth — including planned communities like Broadlands and Brambleton — happened mostly from the mid-1990s through the 2010s as Loudoun's tech corridor expanded, so most of the windows we service here are newer builder-grade units rather than the much older original glass common in closer-in Fairfax County neighborhoods.",
+    faq: [
+      { q: "My house in Ashburn is relatively new — can windows really be failing already?", a: "Yes, especially if the original builder-grade glass was a lower-tier option; seal failure can start within the first 10-15 years on some units, not just after 20-30." },
+      { q: "Do you service Broadlands and Brambleton specifically?", a: "Yes, both are regular service areas for us in Ashburn." },
+      { q: "Does Ashburn's HOA structure affect window replacement?", a: "Many Ashburn communities have HOA guidelines on exterior appearance; glass-only replacement in your existing frame typically preserves the approved look, but we can discuss your specific community if needed." },
+    ] },
+  { key: "leesburg", name: "Leesburg", county: "Loudoun County", zip: "20175",
+    landmarks: "historic downtown Leesburg and the newer residential development surrounding it",
+    housingNote: "Like Manassas, Leesburg has two distinct housing stories — an historic downtown core with older homes, often already on a first or second generation of replacement windows, ringed by newer subdivisions built from the 1990s onward as Loudoun County grew.",
+    faq: [
+      { q: "Does historic downtown Leesburg have rules about window appearance?", a: "Some historic-district guidelines address exterior window appearance; replacing just the glass unit in your existing frame typically keeps the approved look, but we can review your specific property." },
+      { q: "Is newer Leesburg construction less likely to have foggy windows?", a: "Less likely than the historic core, but not immune — builder-grade glass installed in the 1990s-2000s is now old enough to start showing seal failure too." },
+      { q: "Do you serve all of Leesburg or just the historic downtown?", a: "All of Leesburg, both the historic core and the surrounding newer neighborhoods." },
+    ] },
+  { key: "sterling", name: "Sterling", county: "Loudoun County", zip: "20164",
+    landmarks: "the Cascades, Countryside, and Potomac Falls communities, and the area near Dulles Town Center",
+    housingNote: "Sterling homes near Cascades and Countryside were largely built in the 1980s-90s as Loudoun County's tech corridor grew up around Dulles — a lot of original double-pane seals from that build-out are now at or past typical failure age, including many townhomes near Dulles Town Center with original builder-grade glass.",
+    faq: [
+      { q: "Is foggy glass common in Sterling specifically, or is my house unusual?", a: "It's extremely common here — Sterling's housing boom years (mostly late 1980s through the 1990s) mean a large share of the area's original windows are now at or past typical seal-failure age at the same time." },
+      { q: "Do you work on homes near Dulles Town Center, Cascades, or Countryside?", a: "Yes, these are some of our most-serviced Sterling neighborhoods." },
+      { q: "Will airport noise or vibration near Dulles make this worse?", a: "Not something we've seen evidence of — seal failure is driven by age and temperature cycling, not proximity to the airport." },
+    ] },
+  { key: "manassas", name: "Manassas", county: "Prince William County", zip: "20110",
+    landmarks: "Old Town Manassas near the Manassas Museum, and the Signal Hill and Yorkshire neighborhoods",
+    housingNote: "Manassas has two very different housing stories that end up with the same foggy-window problem: near Old Town Manassas and the Manassas Museum, many homes are decades older with windows already replaced at least once, while newer developments around Signal Hill, Yorkshire, and Wellington have original builder windows from the 1990s-2000s hitting the same age wall.",
+    faq: [
+      { q: "I'm near Old Town Manassas and my windows were already replaced once — why are they foggy again?", a: "Replacement windows from the 1990s-2000s have the same type of sealed glass unit as original windows, and that seal has the same lifespan regardless of when it was installed. A second glass-only replacement is still usually cheaper than full window replacement." },
+      { q: "Do you service Signal Hill and Yorkshire?", a: "Yes — these are common service areas for us in Manassas." },
+      { q: "Does the Manassas National Battlefield area have different window styles I should know about?", a: "Not materially for glass repair — historic-adjacent homes sometimes have custom window sizes, which we account for when measuring." },
+    ] },
 ];
 
 const FOGGY_FAQS = [
@@ -1241,6 +1364,12 @@ function ServicePage({ svc, setPage }) {
   const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
   const category = serviceCategory(svc);
   const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
+  // Residential services link out to the residential (Foggy City) area pages,
+  // not the commercial city hubs -- commercial and shower services keep the
+  // commercial city list, since there's no dedicated shower area page.
+  const isResidential = category.label === "Residential Glass Services";
+  const areaLinks = isResidential ? FOGGY_CITIES : CITIES;
+  const areaBasePath = isResidential ? "/foggy-city" : "/city";
 
   useSEO({
     title: servicePageTitle(svc.name),
@@ -1256,7 +1385,7 @@ function ServicePage({ svc, setPage }) {
       name: svc.name,
       description: svc.desc,
       provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-      areaServed: CITIES.map(c => `${c.name}, ${c.state}`),
+      areaServed: isResidential ? FOGGY_CITIES.map(c => `${c.name}, VA`) : CITIES.map(c => `${c.name}, ${c.state}`),
       url: `${SITE}/service/${svc.key}`,
     },
   ]);
@@ -1266,8 +1395,8 @@ function ServicePage({ svc, setPage }) {
       <div className="page-hero">
         <div className="container">
           <Breadcrumbs items={crumbs} />
-          <h1>{svc.name} in Northern Virginia, DC &amp; Maryland</h1>
-          <p>Professional {svc.name.toLowerCase()} serving Northern Virginia, Washington DC, and Maryland — Alexandria, Arlington, Fairfax, McLean, Bethesda, and beyond. Licensed, insured, and fast.</p>
+          <h1>{svc.name} in Northern Virginia{!isResidential && ", DC & Maryland"}</h1>
+          <p>Professional {svc.name.toLowerCase()} serving {isResidential ? "Northern Virginia — Alexandria, Arlington, Fairfax, McLean, and beyond" : "Northern Virginia, Washington DC, and Maryland — Alexandria, Arlington, Fairfax, McLean, Bethesda, and beyond"}. Licensed, insured, and fast.</p>
         </div>
       </div>
       <section className="section">
@@ -1314,10 +1443,10 @@ function ServicePage({ svc, setPage }) {
               </div>
 
               <h2>Service Areas</h2>
-              <p>We provide {svc.name.toLowerCase()} throughout Northern Virginia, Washington DC, and Maryland, including:</p>
+              <p>We provide {svc.name.toLowerCase()} throughout Northern Virginia{!isResidential && ", Washington DC, and Maryland"}, including:</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
-                {CITIES.map(c => (
-                  <Link key={c.key} to={`/city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
+                {areaLinks.map(c => (
+                  <Link key={c.key} to={`${areaBasePath}/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "6px 14px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
 
@@ -1439,16 +1568,11 @@ function CityPage({ city, setPage }) {
                 ))}
               </div>
 
-              <h2 style={{ marginTop: 32 }}>Residential Glass in {city.name}</h2>
-              <p>We also serve homeowners in {city.name} with window glass repair, replacement, and custom frameless shower doors.</p>
-              <div className="city-services">
-                {[...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES].map(s => (
-                  <Link key={s.key} to={`/service/${s.key}`} className="city-service-item">
-                    <h4>{s.name}</h4>
-                    <p>Residential service in {city.name}</p>
-                  </Link>
-                ))}
-              </div>
+              <h2 style={{ marginTop: 32 }}>Also Serving {city.name} Homeowners</h2>
+              <p>
+                We also do residential glass work in {city.name} — see our <Link to="/foggy-window">foggy window repair</Link> services
+                {" "}or <Link to="/service/frameless-shower">frameless shower doors</Link>.
+              </p>
 
               <h2 style={{ marginTop: 32 }}>Why {city.name} Businesses Choose Us</h2>
               <ul>
@@ -2195,21 +2319,29 @@ function FoggyWindowPage({ setPage }) {
 function FoggyCityPage({ city, setPage }) {
   const services = ["Foggy window repair", "Broken window seal replacement", "Condensation between panes fix", "Double pane glass replacement", "Triple pane IGU replacement", "Low-E glass upgrade", "Residential window glass repair", "Insulated glass unit replacement"];
   const crumbs = [{ label: "Home", to: "/" }, { label: "Foggy Window Repair", to: "/foggy-window" }, { label: city.name, to: `/foggy-city/${city.key}` }];
+  const faq = city.faq || [];
 
   useSEO({
-    title: `Foggy Window Repair in ${city.name}, VA | ${PHONE}`,
-    description: `Foggy or cloudy windows in ${city.name}, VA? We replace only the failed insulated glass unit — no full window replacement needed. Free estimates, same-day service available.`,
+    title: `Foggy Window & Glass Repair in ${city.name}, VA`,
+    description: `Foggy or cloudy windows in ${city.name}, VA? We replace the failed insulated glass unit — no full window replacement needed. Serving ${city.landmarks}. Free estimates.`,
     path: `/foggy-city/${city.key}`,
   });
-  useJsonLd(breadcrumbJsonLd(crumbs));
+  useJsonLd([
+    breadcrumbJsonLd(crumbs),
+    faq.length > 0 && {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faq.map(f => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+    },
+  ]);
 
   return (
     <>
       <div className="page-hero">
         <div className="container">
           <Breadcrumbs items={crumbs} />
-          <h1>Foggy Window Repair in {city.name}, VA</h1>
-          <p>Professional foggy window repair and insulated glass unit replacement for homeowners in {city.name}, {city.county}. We fix cloudy, hazy, and moisture-damaged windows without replacing the whole window.</p>
+          <h1>Foggy Window Repair &amp; Glass Replacement in {city.name}, VA</h1>
+          <p>Professional foggy window repair and insulated glass unit replacement for homeowners near {city.landmarks}. We fix cloudy, hazy, and moisture-damaged windows without replacing the whole window.</p>
         </div>
       </div>
       <section className="section">
@@ -2221,7 +2353,7 @@ function FoggyCityPage({ city, setPage }) {
                 <p style={{ fontSize: 14, color: "#0F4C81", lineHeight: 1.6, fontWeight: 600 }}>Most foggy windows do NOT need full window replacement. In many cases we can replace only the insulated glass unit, saving {city.name} homeowners hundreds or even thousands of dollars.</p>
               </div>
               <h2>Foggy Window Repair in {city.name}</h2>
-              <p>If you're seeing foggy, cloudy, or hazy glass in your {city.name} home, the problem is almost always a <strong>failed window seal</strong> — not dirty glass. Homeowners across {city.name} and {city.county} call us when they notice condensation or moisture trapped between their window panes.</p>
+              <p>If you're seeing foggy, cloudy, or hazy glass in your {city.name} home, the problem is almost always a <strong>failed window seal</strong> — not dirty glass. Homeowners near {city.landmarks} call us when they notice condensation or moisture trapped between their window panes.</p>
               <p>The good news: in most cases, you don't need to replace the entire window. We replace only the <strong>insulated glass unit (IGU)</strong> inside your existing frame — saving {city.name} homeowners 60–80% compared to full window replacement.</p>
               <h2>Foggy Window Services in {city.name}</h2>
               <div className="city-services">
@@ -2232,9 +2364,20 @@ function FoggyCityPage({ city, setPage }) {
                   </div>
                 ))}
               </div>
-              <h2 style={{ marginTop: 28 }}>What Causes Foggy Windows in {city.name} Homes?</h2>
-              <p>The Northern Virginia climate — with its hot humid summers and cold winters — puts significant stress on window seals. The repeated expansion and contraction of window frames causes seals to break down over time. Once the hermetic seal of your insulated glass unit fails, outside humid air enters between the panes and creates that characteristic foggy, cloudy appearance.</p>
-              <p>This is 100% a <strong>broken window seal</strong> issue. The condensation you see cannot be cleaned away because it's <em>inside</em> the sealed unit. The only fix is insulated glass unit replacement — and that's our specialty in {city.name}.</p>
+              <h2 style={{ marginTop: 28 }}>Why {city.name} Homes See This So Often</h2>
+              <p>{city.housingNote}</p>
+              <p>The Northern Virginia climate — with its hot humid summers and cold winters — puts significant stress on window seals everywhere in the region. Once the hermetic seal of your insulated glass unit fails, outside humid air enters between the panes and creates that characteristic foggy, cloudy appearance. This is 100% a <strong>broken window seal</strong> issue, not dirty glass — the condensation can't be cleaned away because it's <em>inside</em> the sealed unit.</p>
+              {faq.length > 0 && (
+                <>
+                  <h2 style={{ marginTop: 28 }}>{city.name} Foggy Window FAQ</h2>
+                  {faq.map(f => (
+                    <div key={f.q} style={{ marginBottom: 16 }}>
+                      <h3 style={{ fontSize: 15, color: "#0F4C81", marginBottom: 4 }}>{f.q}</h3>
+                      <p>{f.a}</p>
+                    </div>
+                  ))}
+                </>
+              )}
               <h2 style={{ marginTop: 28 }}>Why {city.name} Homeowners Choose Us</h2>
               <ul>
                 <li>We replace only the IGU — not the whole window — saving you money</li>
