@@ -34,6 +34,21 @@ const sitemapPath = path.join(distDir, "sitemap.xml");
 const appJsxPath = path.join(root, "src", "App.jsx");
 const SITE = "https://commercialglassdoorwindowrepairservice.com";
 
+// Every route is written to disk as <route>/index.html (see writeFile below),
+// so Netlify's static-asset layer 301s a request for the bare path to the
+// trailing-slash form (standard directory-index behavior, not something our
+// own redirect rules control). Google indexes whichever URL it's pointed at
+// first, so every internal reference -- sitemap, canonical/og:url, JSON-LD,
+// and every rendered <a href> -- must use the trailing-slash form directly,
+// or Google just keeps re-discovering the pre-redirect URL and never
+// settles on one canonical ("Page with redirect" / duplicate-canonical in
+// Search Console). Idempotent and safe on absolute URLs, bare paths, "/",
+// and "/#fragment" anchor links (left alone -- same-page, not a route).
+function withSlash(p) {
+  if (!p || p.endsWith("/") || p.includes("#")) return p;
+  return `${p}/`;
+}
+
 if (!existsSync(templatePath)) {
   console.error(`prerender-seo: ${templatePath} not found -- did vite build run first?`);
   process.exit(1);
@@ -158,7 +173,7 @@ function breadcrumbJsonLd(items) {
       "@type": "ListItem",
       position: i + 1,
       name: item.label,
-      item: `${SITE}${item.to}`,
+      item: `${SITE}${withSlash(item.to)}`,
     })),
   };
 }
@@ -166,7 +181,7 @@ function breadcrumbsHtml(items) {
   const parts = items.map((item, i) =>
     i === items.length - 1
       ? `<span>${esc(item.label)}</span>`
-      : `<a href="${esc(item.to)}">${esc(item.label)}</a><span> &rsaquo; </span>`
+      : `<a href="${esc(withSlash(item.to))}">${esc(item.label)}</a><span> &rsaquo; </span>`
   );
   return `<nav class="breadcrumb" aria-label="Breadcrumb">${parts.join("")}</nav>`;
 }
@@ -183,12 +198,12 @@ function serviceAreaLabel(cityObj) {
 }
 function pillsHtml(items, hrefFn, labelFn) {
   return `<div class="pill-list">${items.map(it =>
-    `<a href="${esc(hrefFn(it))}" class="pill">${esc(labelFn(it))}</a>`
+    `<a href="${esc(withSlash(hrefFn(it)))}" class="pill">${esc(labelFn(it))}</a>`
   ).join("")}</div>`;
 }
 function linkListHtml(items, hrefFn, labelFn) {
   return `<div class="link-list">${items.map(it =>
-    `<a href="${esc(hrefFn(it))}" class="link-list-item">${esc(labelFn(it))}</a>`
+    `<a href="${esc(withSlash(hrefFn(it)))}" class="link-list-item">${esc(labelFn(it))}</a>`
   ).join("")}</div>`;
 }
 function plainListHtml(items) {
@@ -196,7 +211,7 @@ function plainListHtml(items) {
 }
 function ctaSectionHtml(heading, body) {
   return `<div class="cta-section"><div class="container"><h2>${esc(heading)}</h2><p>${esc(body)}</p>
-    <div class="cta-btns"><a href="${PHONE_HREF}" class="btn-primary">Call ${esc(PHONE)}</a><a href="/contact" class="btn-secondary">Request Estimate</a></div>
+    <div class="cta-btns"><a href="${PHONE_HREF}" class="btn-primary">Call ${esc(PHONE)}</a><a href="/contact/" class="btn-secondary">Request Estimate</a></div>
   </div></div>`;
 }
 
@@ -229,8 +244,8 @@ function renderService(svc) {
       <h2>About Our ${esc(svc.name)} Service</h2>
       <p>${esc(svc.desc)} Our licensed technicians serve ${isResidential ? "homeowners in Alexandria, Arlington, Fairfax, McLean, and every surrounding community throughout Northern Virginia" : "homeowners and businesses in Alexandria, Arlington, Fairfax, McLean, Bethesda, and Washington DC — and every surrounding community throughout Northern Virginia, DC, and Maryland"}.</p>
       <p>When you call us for ${esc(svc.name.toLowerCase())}, you can expect a fast response, honest pricing, and high-quality workmanship backed by our satisfaction guarantee. We use only premium materials from trusted manufacturers.
-      ${svc.key !== "emergency-boardup" ? ` If your glass is damaged outside business hours, our <a href="/service/emergency-boardup">emergency commercial glass repair and board-up service</a> can secure the opening until replacement glass is ready.` : ""}
-      Ready to move forward? <a href="/contact">Request a free quote</a> and we'll get back to you fast.</p>
+      ${svc.key !== "emergency-boardup" ? ` If your glass is damaged outside business hours, our <a href="/service/emergency-boardup/">emergency commercial glass repair and board-up service</a> can secure the opening until replacement glass is ready.` : ""}
+      Ready to move forward? <a href="/contact/">Request a free quote</a> and we'll get back to you fast.</p>
       <h2>Why Choose Us?</h2>
       <ul>
         <li>Same-day service available for most requests</li>
@@ -266,7 +281,7 @@ function renderService(svc) {
         description: svc.desc,
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
         areaServed: isResidential ? FOGGY_CITIES.map(c => `${c.name}, VA`) : CITIES.map(c => `${c.name}, ${c.state}`),
-        url: `${SITE}/service/${svc.key}`,
+        url: `${SITE}${withSlash(`/service/${svc.key}`)}`,
       },
     ],
     body,
@@ -286,11 +301,11 @@ function renderCity(city) {
     </div></div>
     <section class="section"><div class="container"><div class="service-content"><div class="service-body">
       <h2>Commercial Glass Services in ${esc(city.name)}</h2>
-      <p>Businesses in ${esc(city.name)} depend on clean, secure storefront glass to attract customers and protect their assets. Our commercial glass services in ${esc(city.name)} include everything from <a href="/service/emergency-boardup">emergency board-up</a> to full storefront installation.</p>
+      <p>Businesses in ${esc(city.name)} depend on clean, secure storefront glass to attract customers and protect their assets. Our commercial glass services in ${esc(city.name)} include everything from <a href="/service/emergency-boardup/">emergency board-up</a> to full storefront installation.</p>
       ${city.blurb ? `<p>${esc(city.blurb)}</p>` : ""}
       ${linkListHtml(COMMERCIAL_SERVICES, s => `/service/${s.key}`, s => s.name)}
       <h2>Also Serving ${esc(city.name)} Homeowners</h2>
-      <p>We also do residential glass work in ${esc(city.name)} — see our <a href="/foggy-window">foggy window repair</a> services or <a href="/service/frameless-shower">frameless shower doors</a>.</p>
+      <p>We also do residential glass work in ${esc(city.name)} — see our <a href="/foggy-window/">foggy window repair</a> services or <a href="/service/frameless-shower/">frameless shower doors</a>.</p>
       <h2>Why ${esc(city.name)} Businesses Choose Us</h2>
       <ul>
         <li>Fastest response time in ${esc(city.county)}</li>
@@ -300,7 +315,7 @@ function renderCity(city) {
         <li>Free estimates with no obligation</li>
         <li>Hundreds of completed jobs in ${esc(city.name)} and surrounding area</li>
       </ul>
-      <p>Ready to get started? <a href="/contact">Request a free quote</a> for your ${esc(city.name)} property, or call us for 24/7 <a href="/service/emergency-boardup">emergency glass repair</a>.</p>
+      <p>Ready to get started? <a href="/contact/">Request a free quote</a> for your ${esc(city.name)} property, or call us for 24/7 <a href="/service/emergency-boardup/">emergency glass repair</a>.</p>
       ${featuredServices.length > 0 ? `
       <h2>Featured Services in ${esc(city.name)}</h2>
       <p>Local guides for glass repair services in ${esc(city.name)}:</p>
@@ -323,7 +338,7 @@ function renderCity(city) {
         name: `Commercial Glass Repair in ${city.name}, ${city.state}`,
         areaServed: { "@type": "City", name: `${city.name}, ${city.state}` },
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-        url: `${SITE}/city/${city.key}`,
+        url: `${SITE}${withSlash(`/city/${city.key}`)}`,
       },
     ],
     body,
@@ -363,7 +378,7 @@ function renderFoggyCity(city) {
         <li>Licensed and insured technicians</li>
         <li>Low-E and energy-efficient glass upgrade options</li>
       </ul>
-      <p>Ready to get started? <a href="/contact">Request a free quote</a> for your ${esc(city.name)} home.</p>
+      <p>Ready to get started? <a href="/contact/">Request a free quote</a> for your ${esc(city.name)} home.</p>
       <h2>Other Areas Near ${esc(city.name)}</h2>
       ${pillsHtml(otherAreas, c => `/foggy-city/${c.key}`, c => c.name)}
     </div></div></div></section>
@@ -396,7 +411,7 @@ function renderBlogPost(post) {
     </div></div>
     <section class="section"><div class="container"><div class="service-content"><div class="service-body">
       ${(post.sections || []).map(s => `<h2>${esc(s.heading)}</h2><p>${esc(s.body)}</p>`).join("\n")}
-      <p>Have a question about your specific situation? <a href="/contact">Request a free quote</a> and we'll walk you through it.</p>
+      <p>Have a question about your specific situation? <a href="/contact/">Request a free quote</a> and we'll walk you through it.</p>
       ${relatedServices.length > 0 ? `<h2>Related Services</h2>${linkListHtml(relatedServices, s => `/service/${s.key}`, s => s.name)}` : ""}
     </div></div></div></section>
     ${ctaSectionHtml("Have a Glass Repair Question?", "Call now for a fast, free estimate. We serve Northern Virginia, Washington DC, and Maryland.")}
@@ -415,7 +430,7 @@ function renderBlogPost(post) {
         datePublished: post.date,
         author: { "@type": "Organization", name: COMPANY },
         publisher: { "@type": "Organization", name: COMPANY },
-        url: `${SITE}/blog/${post.key}`,
+        url: `${SITE}${withSlash(`/blog/${post.key}`)}`,
       },
     ],
     body,
@@ -486,7 +501,7 @@ function renderContact() {
         <div class="form-group"><label>Service Needed</label><select name="service"><option value="">Select a service...</option>${serviceOptions}</select></div>
         <div class="form-group"><label>City / Location</label><select name="city"><option value="">Select your city...</option>${cityOptions}</select></div>
         <div class="form-group"><label>Describe the Issue *</label><textarea name="message" required placeholder="Please describe what needs to be repaired or replaced..."></textarea></div>
-        <input type="hidden" name="_next" value="${SITE}/contact" />
+        <input type="hidden" name="_next" value="${SITE}/contact/" />
         <button class="form-submit" type="submit">📨 Send My Request</button>
       </form>
     </div></section>
@@ -543,7 +558,7 @@ function renderGeneratedPage(slug, entry) {
   const isResidentialSvc = RESIDENTIAL_SERVICES.some(s => s.key === service);
   const foggyCityObj = isResidentialSvc ? FOGGY_CITIES.find(c => c.key === city) : null;
   const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
-  const cityPath = foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null;
+  const cityPath = withSlash(foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null);
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
   const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
   const crumbs = [
@@ -569,10 +584,10 @@ function renderGeneratedPage(slug, entry) {
       ${faq.length > 0 ? `<h2>Frequently Asked Questions</h2>${faq.map(f => `<h3>${esc(f.q)}</h3><p>${esc(f.a)}</p>`).join("\n")}` : ""}
       <h2>Related Services &amp; Areas</h2>
       <p>
-        ${svc ? `Learn more about our <a href="/service/${esc(svc.key)}">${esc(svc.name.toLowerCase())}</a> services. ` : ""}
+        ${svc ? `Learn more about our <a href="/service/${esc(svc.key)}/">${esc(svc.name.toLowerCase())}</a> services. ` : ""}
         ${cityObj && cityPath ? `See everything we offer throughout <a href="${esc(cityPath)}">${esc(cityObj.name)}, ${esc(cityObj.state || "VA")}</a>. ` : ""}
-        ${emergencyService && service !== emergencyService.key ? `Need immediate service? Visit our <a href="/service/${esc(emergencyService.key)}">Emergency Commercial Glass Repair</a> page. ` : ""}
-        Ready to get started? <a href="/contact">Request a free quote</a> and we'll get back to you fast.
+        ${emergencyService && service !== emergencyService.key ? `Need immediate service? Visit our <a href="/service/${esc(emergencyService.key)}/">Emergency Commercial Glass Repair</a> page. ` : ""}
+        Ready to get started? <a href="/contact/">Request a free quote</a> and we'll get back to you fast.
       </p>
       ${otherLocations.length > 0 && svc ? `<h2>More ${esc(svc.name)} Locations</h2>${linkListHtml(otherLocations, p => `/pages/${p.slug}`, p => p.title)}` : ""}
     </div></div></div></section>
@@ -592,7 +607,7 @@ function renderGeneratedPage(slug, entry) {
         description: intro || svc.desc,
         provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
         areaServed: cityObj ? `${cityObj.name}, ${cityObj.state || "VA"}` : CITIES.map(c => `${c.name}, ${c.state}`),
-        url: `${SITE}/pages/${slug}`,
+        url: `${SITE}${withSlash(`/pages/${slug}`)}`,
       },
       faq.length > 0 && {
         "@context": "https://schema.org",
@@ -624,6 +639,13 @@ function injectHead(html, { title, description, canonicalPath, robots }) {
   }
 
   if (canonicalPath) {
+    // The base template (index.html) already hardcodes a canonical tag for
+    // the homepage -- strip it first or every other route ends up with two
+    // conflicting <link rel="canonical"> tags (a real, separate cause of
+    // "Google chose different canonical" in Search Console, independent of
+    // the trailing-slash issue this function's withSlash(canonicalPath)
+    // already fixes).
+    out = out.replace(/\s*<link rel="canonical"[^>]*>/, "");
     out = out.replace("</head>", `  <link rel="canonical" href="${SITE}${canonicalPath}" />\n  <meta property="og:url" content="${SITE}${canonicalPath}" />\n  </head>`);
   }
 
@@ -648,10 +670,11 @@ function writeFile(routePath, html) {
 }
 
 function writeRoute({ path: routePath, title, description, schemas, body }) {
-  let html = injectHead(template, { title, description, canonicalPath: routePath, robots: "index, follow" });
+  const finalPath = withSlash(routePath);
+  let html = injectHead(template, { title, description, canonicalPath: finalPath, robots: "index, follow" });
   html = injectJsonLd(html, schemas);
   html = injectBody(html, body);
-  writeFile(routePath, html);
+  writeFile(finalPath, html);
 }
 
 // --- Generate every route ---------------------------------------------
@@ -685,8 +708,8 @@ console.log(`prerender-seo: wrote ${written} static route HTML files (${generate
       <p>The page you're looking for doesn't exist or may have moved. Here are some places to start instead:</p>
       <p>
         <a href="/" class="btn-primary">Home</a>
-        <a href="/service/commercial-door" class="btn-secondary">Commercial Services</a>
-        <a href="/contact" class="btn-secondary">Contact Us</a>
+        <a href="/service/commercial-door/" class="btn-secondary">Commercial Services</a>
+        <a href="/contact/" class="btn-secondary">Contact Us</a>
       </p>
     </div></div>
   `;
@@ -708,11 +731,12 @@ if (existsSync(sitemapPath)) {
   const existingXml = readFileSync(sitemapPath, "utf8");
   const staticLocs = [...existingXml.matchAll(/<loc>(.*?)<\/loc>/g)]
     .map(m => m[1])
-    .filter(loc => !loc.includes("/pages/"));
+    .filter(loc => !loc.includes("/pages/"))
+    .map(withSlash);
 
   const today = new Date().toISOString().slice(0, 10);
-  const generatedLocs = generatedSlugs.map(slug => `${SITE}/pages/${slug}`);
-  const allLocs = [...staticLocs, ...generatedLocs];
+  const generatedLocs = generatedSlugs.map(slug => withSlash(`${SITE}/pages/${slug}`));
+  const allLocs = [...new Set([...staticLocs, ...generatedLocs])];
 
   const urlEntries = allLocs.map(loc => `  <url>
     <loc>${loc}</loc>
