@@ -1,5 +1,22 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, Link, useNavigate, useParams, useLocation } from "react-router-dom";
+import { Routes, Route, Link as RouterLink, useNavigate, useParams, useLocation } from "react-router-dom";
+
+// Every route is prerendered to <route>/index.html (see scripts/prerender-seo.js),
+// so Netlify 301s a request for the bare path to the trailing-slash form
+// (standard directory-index behavior). A client-side nav to the bare path
+// would leave the address bar and useSEO's canonical tag disagreeing with
+// that redirect target, so every internal link goes through this thin
+// wrapper instead of react-router's Link directly -- one place normalizes
+// every `to`, present and future, rather than relying on every call site to
+// remember the trailing slash. Idempotent and safe on an already-slashed
+// path, "/", and a same-page "/#fragment" anchor link (left alone).
+function withSlash(p) {
+  if (!p || p.endsWith("/") || p.includes("#")) return p;
+  return `${p}/`;
+}
+function Link({ to, ...rest }) {
+  return <RouterLink to={typeof to === "string" ? withSlash(to) : to} {...rest} />;
+}
 
 // Each SEO pipeline page is its own file (src/data/pages/<slug>.json), so
 // publishing a page is always a single-file create-or-update — no
@@ -55,7 +72,7 @@ function useSEO({ title, description, path, noindex = false }) {
     setMetaTag("name", "robots", noindex ? "noindex, follow" : "index, follow");
     setMetaTag("property", "og:title", title);
     setMetaTag("property", "og:description", description);
-    setMetaTag("property", "og:url", path ? `${SITE}${path}` : undefined);
+    setMetaTag("property", "og:url", path ? `${SITE}${withSlash(path)}` : undefined);
 
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
@@ -63,7 +80,7 @@ function useSEO({ title, description, path, noindex = false }) {
       canonical.setAttribute("rel", "canonical");
       document.head.appendChild(canonical);
     }
-    canonical.setAttribute("href", `${SITE}${path || "/"}`);
+    canonical.setAttribute("href", `${SITE}${withSlash(path || "/")}`);
   }, [title, description, path, noindex]);
 }
 
@@ -92,7 +109,7 @@ function breadcrumbJsonLd(items) {
       "@type": "ListItem",
       position: i + 1,
       name: item.label,
-      item: `${SITE}${item.to}`,
+      item: `${SITE}${withSlash(item.to)}`,
     })),
   };
 }
@@ -118,30 +135,34 @@ function Breadcrumbs({ items }) {
 function pageToPath(page) {
   switch (page.type) {
     case "home": return "/";
-    case "service": return `/service/${page.key}`;
-    case "city": return `/city/${page.key}`;
-    case "foggy-window": return "/foggy-window";
-    case "foggy-city": return `/foggy-city/${page.key}`;
-    case "gallery": return "/gallery";
-    case "blog": return "/blog";
-    case "contact": return "/contact";
-    case "generated": return `/pages/${page.key}`;
+    case "service": return withSlash(`/service/${page.key}`);
+    case "city": return withSlash(`/city/${page.key}`);
+    case "foggy-window": return "/foggy-window/";
+    case "foggy-city": return withSlash(`/foggy-city/${page.key}`);
+    case "gallery": return "/gallery/";
+    case "blog": return "/blog/";
+    case "contact": return "/contact/";
+    case "generated": return withSlash(`/pages/${page.key}`);
     default: return "/";
   }
 }
 
 // Derive a minimal page-type object from the current URL, used for nav
 // active-state highlighting (Header/Footer only read currentPage.type).
+// Trailing-slash-tolerant: every real route is the slash form (see
+// withSlash above), but this also runs on whatever the browser's address
+// bar happens to hold (e.g. a stale bookmark), so both forms must match.
 function pathToPageType(pathname) {
-  if (pathname === "/") return { type: "home" };
-  if (pathname.startsWith("/service/")) return { type: "service" };
-  if (pathname.startsWith("/city/")) return { type: "city" };
-  if (pathname === "/foggy-window") return { type: "foggy-window" };
-  if (pathname.startsWith("/foggy-city/")) return { type: "foggy-city" };
-  if (pathname === "/gallery") return { type: "gallery" };
-  if (pathname === "/blog" || pathname.startsWith("/blog/")) return { type: "blog" };
-  if (pathname === "/contact") return { type: "contact" };
-  if (pathname.startsWith("/pages/")) return { type: "generated" };
+  const p = pathname.length > 1 ? pathname.replace(/\/$/, "") : pathname;
+  if (p === "/") return { type: "home" };
+  if (p.startsWith("/service/")) return { type: "service" };
+  if (p.startsWith("/city/")) return { type: "city" };
+  if (p === "/foggy-window") return { type: "foggy-window" };
+  if (p.startsWith("/foggy-city/")) return { type: "foggy-city" };
+  if (p === "/gallery") return { type: "gallery" };
+  if (p === "/blog" || p.startsWith("/blog/")) return { type: "blog" };
+  if (p === "/contact") return { type: "contact" };
+  if (p.startsWith("/pages/")) return { type: "generated" };
   return { type: "home" };
 }
 
@@ -1386,7 +1407,7 @@ function ServicePage({ svc, setPage }) {
       description: svc.desc,
       provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
       areaServed: isResidential ? FOGGY_CITIES.map(c => `${c.name}, VA`) : CITIES.map(c => `${c.name}, ${c.state}`),
-      url: `${SITE}/service/${svc.key}`,
+      url: `${SITE}${withSlash(`/service/${svc.key}`)}`,
     },
   ]);
 
@@ -1531,7 +1552,7 @@ function CityPage({ city, setPage }) {
       name: `Commercial Glass Repair in ${city.name}, ${city.state}`,
       areaServed: { "@type": "City", name: `${city.name}, ${city.state}` },
       provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
-      url: `${SITE}/city/${city.key}`,
+      url: `${SITE}${withSlash(`/city/${city.key}`)}`,
     },
   ]);
 
@@ -1898,7 +1919,7 @@ function BlogPostPage({ post }) {
       datePublished: post.date,
       author: { "@type": "Organization", name: COMPANY },
       publisher: { "@type": "Organization", name: COMPANY },
-      url: `${SITE}/blog/${post.key}`,
+      url: `${SITE}${withSlash(`/blog/${post.key}`)}`,
     },
   ]);
 
@@ -2607,7 +2628,7 @@ function GeneratedPage({ entry, slug, setPage }) {
       description: intro || svc.desc,
       provider: { "@type": "LocalBusiness", name: COMPANY, telephone: PHONE, url: SITE },
       areaServed: cityObj ? `${cityObj.name}, ${cityObj.state || "VA"}` : CITIES.map(c => `${c.name}, ${c.state}`),
-      url: `${SITE}/pages/${slug}`,
+      url: `${SITE}${withSlash(`/pages/${slug}`)}`,
     },
     faq.length > 0 && {
       "@context": "https://schema.org",

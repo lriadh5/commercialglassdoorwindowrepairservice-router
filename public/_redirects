@@ -4,6 +4,6 @@
 # Orphaned URL from a pre-rebuild version of the site (flat static HTML page,
 # deleted during the migration to the React/JSON pipeline) that Google still
 # has indexed. Redirects to the current page covering the same service+city.
-/commercial-storefront-glass-installation-alexandria-va.html   /pages/storefront-glass-repair-alexandria   301!
+/commercial-storefront-glass-installation-alexandria-va.html   /pages/storefront-glass-repair-alexandria/   301!
 
 /*              /404.html       404

@@ -12,17 +12,28 @@ const sitemapPath = path.join(root, "public", "sitemap.xml");
 const pagesDir = path.join(root, "src", "data", "pages");
 const today = new Date().toISOString().slice(0, 10);
 
+// Every route is served from <route>/index.html, so Netlify 301s the bare
+// path to the trailing-slash form (standard directory-index behavior).
+// Every sitemap URL must be the final, post-redirect form directly, or
+// Google just keeps re-crawling the pre-redirect URL. Idempotent and safe
+// on an already-slashed URL or the bare domain root.
+function withSlash(p) {
+  if (!p || p.endsWith("/")) return p;
+  return `${p}/`;
+}
+
 const existingXml = readFileSync(sitemapPath, "utf8");
 const staticLocs = [...existingXml.matchAll(/<loc>(.*?)<\/loc>/g)]
   .map(m => m[1])
-  .filter(loc => !loc.includes("/pages/")); // drop stale generated entries, we'll re-add current ones
+  .filter(loc => !loc.includes("/pages/")) // drop stale generated entries, we'll re-add current ones
+  .map(withSlash);
 
 const slugs = existsSync(pagesDir)
   ? readdirSync(pagesDir).filter(f => f.endsWith(".json")).map(f => f.replace(/\.json$/, ""))
   : [];
-const generatedLocs = slugs.map(slug => `${SITE}/pages/${slug}`);
+const generatedLocs = slugs.map(slug => withSlash(`${SITE}/pages/${slug}`));
 
-const allLocs = [...staticLocs, ...generatedLocs];
+const allLocs = [...new Set([...staticLocs, ...generatedLocs])];
 
 const urlEntries = allLocs.map(loc => `  <url>
     <loc>${loc}</loc>
