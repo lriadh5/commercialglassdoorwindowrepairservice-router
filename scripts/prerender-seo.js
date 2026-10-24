@@ -619,6 +619,66 @@ function renderGeneratedPage(slug, entry) {
   };
 }
 
+// Homepage: mirrors HomePage in App.jsx (same headings, service/city/blog
+// links, phone CTAs). Before this existed, dist/index.html shipped with an
+// empty <div id="root"></div>, so crawlers saw only title/meta on the most
+// important page of the site. Decorative photos, the review cards, and the
+// unverifiable hero badge/stat claims are intentionally left out of this
+// pre-JS snapshot -- JS replaces it on load for every real visitor.
+function renderHome() {
+  const serviceCards = (list) => `<div class="services-grid">${list.map(s =>
+    `<a href="${esc(withSlash(`/service/${s.key}`))}" class="service-card"><h3>${esc(s.name)}</h3><p>${esc(s.desc)}</p></a>`
+  ).join("")}</div>`;
+  const body = `
+    <section class="hero"><div class="container">
+      <h1>Commercial Glass Door &amp; Window Repair Services</h1>
+      <p>Fast, professional glass repair for commercial storefronts, residential windows, and custom frameless shower doors throughout Northern Virginia, Washington DC, and Maryland. Same-day service available.</p>
+      <div class="hero-btns"><a href="${PHONE_HREF}" class="btn-primary">Call ${esc(PHONE)}</a><a href="/contact/" class="btn-secondary">Get Free Estimate</a></div>
+      <ul class="trust-list"><li>24/7 Emergency Service</li><li>Licensed &amp; Insured</li><li>Same-Day Service</li><li>All Commercial Brands</li><li>Free Estimates</li><li>${CITIES.length}+ Cities Served</li></ul>
+    </div></section>
+    <section class="section" id="commercial-glass-services"><div class="container">
+      <h2>Commercial Glass Services</h2>
+      <p>We serve retail stores, office buildings, restaurants, hotels, and commercial properties of all sizes across Northern Virginia, Washington DC, and Maryland.</p>
+      ${serviceCards(COMMERCIAL_SERVICES)}
+    </div></section>
+    <section class="section" id="residential-shower-services"><div class="container">
+      <h2>Residential &amp; Shower Door Services</h2>
+      <p>From broken window panes to custom frameless shower doors, we handle all residential glass needs in Northern Virginia.</p>
+      ${serviceCards([...RESIDENTIAL_SERVICES, ...SHOWER_SERVICES])}
+    </div></section>
+    <div class="emerg-section"><div class="container">
+      <h2>24/7 Emergency Glass Board-Up Service</h2>
+      <p>Broken storefront glass? Vandalism? Accident? We respond fast — any hour, any day across Northern Virginia, Washington DC, and Maryland. See our <a href="/service/emergency-boardup/">emergency board-up service</a>.</p>
+      <div class="cta-btns"><a href="${PHONE_HREF}" class="btn-primary">Call Now: ${esc(PHONE)}</a></div>
+    </div></div>
+    <section class="section"><div class="container">
+      <h2>Foggy Window Repair &amp; Broken Seal Replacement</h2>
+      <p>Seeing fog, haze, or condensation between your window panes? That's a failed window seal — and you probably don't need to replace the whole window. In many cases we replace only the insulated glass unit. <a href="/foggy-window/">Learn about foggy window repair</a>.</p>
+      <p>Foggy window repair service areas:</p>
+      ${pillsHtml(FOGGY_CITIES, c => `/foggy-city/${c.key}`, c => c.name)}
+    </div></section>
+    <section class="section" id="service-areas"><div class="container">
+      <h2>Service Areas in Northern Virginia, DC &amp; Maryland</h2>
+      <p>We proudly serve businesses and homeowners across Northern Virginia, Washington DC, and Maryland. Select your city for local service information.</p>
+      ${linkListHtml(CITIES, c => `/city/${c.key}`, c => `${c.name}, ${c.state}`)}
+    </div></section>
+    <section class="section"><div class="container">
+      <h2>Glass Repair Tips &amp; Resources</h2>
+      <p>Helpful guides for Northern Virginia business owners and homeowners.</p>
+      ${linkListHtml(BLOG_POSTS.slice(0, 3), p => `/blog/${p.key}`, p => p.title)}
+      <p><a href="/blog/">View all articles</a> · <a href="/gallery/">View project gallery</a></p>
+    </div></section>
+    ${ctaSectionHtml("Ready to Get Started?", "Call now or request a free estimate. We serve all of Northern Virginia, Washington DC, and Maryland with fast, professional glass repair.")}
+  `;
+  return {
+    path: "/",
+    title: `${COMPANY} | Northern Virginia, DC & Maryland | ${PHONE}`,
+    description: `Commercial glass door & window repair throughout Northern Virginia, Washington DC, and Maryland — storefront glass, commercial doors, emergency board-up, tempered & insulated glass. Licensed, insured, same-day service. Call ${PHONE}.`,
+    schemas: [],
+    body,
+  };
+}
+
 // --- HTML assembly: head/body/JSON-LD injection into the built shell ------
 function injectHead(html, { title, description, canonicalPath, robots }) {
   let out = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
@@ -694,8 +754,9 @@ writeRoute(renderBlogIndex()); written++;
 writeRoute(renderGallery()); written++;
 writeRoute(renderContact()); written++;
 writeRoute(renderFoggyWindow()); written++;
+writeRoute(renderHome()); written++;
 
-console.log(`prerender-seo: wrote ${written} static route HTML files (${generatedSlugs.length} from src/data/pages/*.json, ${ALL_SERVICES.length} services, ${CITIES.length} cities, ${FOGGY_CITIES.length} foggy-cities, ${BLOG_POSTS.length} blog posts, 4 static singles)`);
+console.log(`prerender-seo: wrote ${written} static route HTML files (${generatedSlugs.length} from src/data/pages/*.json, ${ALL_SERVICES.length} services, ${CITIES.length} cities, ${FOGGY_CITIES.length} foggy-cities, ${BLOG_POSTS.length} blog posts, 5 static singles incl. homepage)`);
 
 // --- Real static 404 (see netlify.toml / public/_redirects: the catch-all
 // now points here with a genuine 404 status, instead of soft-404ing every
