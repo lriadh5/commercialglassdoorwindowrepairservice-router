@@ -622,7 +622,7 @@ function renderGeneratedPage(slug, entry) {
 // Homepage: mirrors HomePage in App.jsx (same headings, service/city/blog
 // links, phone CTAs). Before this existed, dist/index.html shipped with an
 // empty <div id="root"></div>, so crawlers saw only title/meta on the most
-// important page of the site. Decorative photos, the review cards, and the
+// important page of the site. Decorative photos and the
 // unverifiable hero badge/stat claims are intentionally left out of this
 // pre-JS snapshot -- JS replaces it on load for every real visitor.
 function renderHome() {

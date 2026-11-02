@@ -835,13 +835,6 @@ const css = `
   .emerg-section h2{font-family:'Barlow Condensed',sans-serif;font-size:clamp(24px,4vw,38px);font-weight:900;text-transform:uppercase;margin-bottom:8px;}
   .emerg-section p{font-size:14px;color:rgba(255,255,255,0.85);margin-bottom:20px;}
 
-  /* REVIEWS */
-  .reviews-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;}
-  .review-card{background:#fff;border:1px solid #e8ecf0;border-radius:8px;padding:20px;}
-  .review-stars{color:#FFD700;font-size:16px;margin-bottom:10px;}
-  .review-text{font-size:13px;color:#555;line-height:1.7;margin-bottom:12px;font-style:italic;}
-  .review-author{font-size:12px;font-weight:700;color:#333;}
-  .review-loc{font-size:11px;color:#888;}
 
   /* ===== MOBILE ===== */
   @media(max-width:768px){
@@ -877,7 +870,6 @@ const css = `
     .services-grid{grid-template-columns:1fr!important;}
     .areas-grid{grid-template-columns:repeat(2,1fr);}
     .blog-grid{grid-template-columns:1fr!important;}
-    .reviews-grid{grid-template-columns:1fr!important;}
     .gallery-grid{grid-template-columns:repeat(2,1fr);}
     .gallery-tabs{gap:4px;}
     .gtab{font-size:11px;padding:6px 10px;}
@@ -1115,15 +1107,6 @@ function HomePage({ setPage }) {
     path: "/",
   });
 
-  const REVIEWS = [
-    { text: "Called at 9pm after our storefront was shattered. They had a board-up crew there within the hour and came back the next morning with the replacement glass. Incredible service.", author: "Michael R.", loc: "Alexandria, VA" },
-    { text: "We manage 12 commercial properties in NoVA and these guys are our go-to for all glass repairs. Fast, professional, and fair pricing.", author: "Sandra T.", loc: "Fairfax, VA" },
-    { text: "Our Target store had a door that wouldn't close properly. They diagnosed it as a failed closer and had a new LCN unit installed same day. Great work.", author: "James K.", loc: "Arlington, VA" },
-    { text: "Beautiful frameless shower doors installed perfectly. Very clean, professional crew. Would 100% recommend.", author: "Patricia L.", loc: "McLean, VA" },
-    { text: "Fast response for an emergency board-up after a break-in. They secured the property, kept it weathertight overnight, and replaced the glass the next day.", author: "David M.", loc: "Reston, VA" },
-    { text: "Got 3 quotes for our storefront glass replacement. These guys were the most competitive AND fastest response time. Very happy.", author: "Karen W.", loc: "Herndon, VA" },
-  ];
-
   return (
     <>
       {/* HERO */}
@@ -1311,24 +1294,6 @@ function HomePage({ setPage }) {
                 <h4>{c.name}</h4>
                 <span>{c.county}</span>
               </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* REVIEWS */}
-      <section className="section section-alt">
-        <div className="container">
-          <div className="section-title">What Our Customers Say</div>
-          <div className="section-sub">Real reviews from real customers across Northern Virginia.</div>
-          <div className="reviews-grid">
-            {REVIEWS.map((r, i) => (
-              <div key={i} className="review-card">
-                <div className="review-stars">⭐⭐⭐⭐⭐</div>
-                <p className="review-text">"{r.text}"</p>
-                <div className="review-author">{r.author}</div>
-                <div className="review-loc">{r.loc}</div>
-              </div>
             ))}
           </div>
         </div>
