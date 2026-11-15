@@ -337,6 +337,8 @@ const COMMERCIAL_SERVICES = [
   { key: "tempered-glass", name: "Tempered Glass Repair & Replacement", desc: "Code-compliant tempered safety glass replacement for storefronts, doors, and commercial glazing that requires impact-resistant glass." },
   { key: "laminated-safety-glass", name: "Laminated Safety Glass Replacement", desc: "Laminated safety glass replacement for storefronts and commercial openings where impact resistance and sound control matter." },
   { key: "commercial-insulated-glass", name: "Commercial Insulated Glass Replacement", desc: "Replacement of failed or damaged insulated glass units (IGUs) in commercial storefronts, curtain walls, and office buildings." },
+  { key: "commercial-glass-door-repair", name: "Commercial Glass Door Repair", desc: "Repair of broken, cracked, or malfunctioning commercial glass doors — glass panels, frames, and hardware — for offices, retail, and storefronts." },
+  { key: "commercial-glass-repair", name: "Commercial Glass Repair", desc: "General commercial glass repair for storefronts, windows, and interior glazing across office, retail, and mixed-use properties." },
 ];
 
 const RESIDENTIAL_SERVICES = [
