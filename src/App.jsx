@@ -280,12 +280,27 @@ function generatedPageTitle(rawTitle) {
   return withSuffix.length <= MAX_TITLE_LEN ? withSuffix : truncateTitle(raw);
 }
 
+// Joins title segments with " | ", dropping segments from the END one at a
+// time until what's left fits MAX_TITLE_LEN. truncateTitle's own mid-string
+// cut was landing between two segments on most service/city titles (e.g.
+// "Commercial Door Repair | Northern VA, DC & MD | Commercial" -- the brand
+// cut off after one word, or dropped entirely leaving a dangling "|"). This
+// only ever truncates the single most important (first) segment, and only
+// if even that alone doesn't fit.
+function buildSegmentedTitle(segments, maxLen = MAX_TITLE_LEN) {
+  for (let i = segments.length; i >= 1; i--) {
+    const candidate = segments.slice(0, i).join(" | ");
+    if (candidate.length <= maxLen) return candidate;
+  }
+  return truncateTitle(segments[0], maxLen);
+}
+
 function servicePageTitle(svcName) {
-  return truncateTitle(`${svcName} | Northern VA, DC & MD | ${COMPANY_SHORT}`);
+  return buildSegmentedTitle([svcName, "Northern VA, DC & MD", COMPANY_SHORT]);
 }
 
 function cityPageTitle(cityName, state) {
-  return truncateTitle(`Commercial Glass Repair in ${cityName}, ${state} | ${COMPANY_SHORT}`);
+  return buildSegmentedTitle([`Commercial Glass Repair in ${cityName}, ${state}`, COMPANY_SHORT]);
 }
 
 const COLORS = {
