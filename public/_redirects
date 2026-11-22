@@ -6,4 +6,25 @@
 # has indexed. Redirects to the current page covering the same service+city.
 /commercial-storefront-glass-installation-alexandria-va.html   /pages/storefront-glass-repair-alexandria/   301!
 
+# Every route's canonical tag, sitemap entry, and internal link already point
+# at the trailing-slash form (see withSlash() in scripts/prerender-seo.js and
+# src/App.jsx) -- but nothing previously forced the bare path to redirect
+# there at the HTTP level, so Netlify served identical content at both paths
+# with 200 OK. Google Search Console confirmed both forms indexed and
+# reporting impressions separately for these pages. These explicit 301s give
+# each pair one canonical URL instead of waiting on Google to reconcile two
+# live 200s on its own.
+/city/springfield                                  /city/springfield/                                  301!
+/city/arlington                                     /city/arlington/                                     301!
+/city/chantilly                                     /city/chantilly/                                     301!
+/city/fallschurch                                   /city/fallschurch/                                   301!
+/city/tysons                                        /city/tysons/                                        301!
+/service/storefront-door-repair                     /service/storefront-door-repair/                     301!
+/service/commercial-window-replacement              /service/commercial-window-replacement/              301!
+/service/aluminum-storefront                        /service/aluminum-storefront/                        301!
+/pages/tempered-glass-storefront-arlington          /pages/tempered-glass-storefront-arlington/          301!
+/pages/glass-curtain-wall-repair-arlington          /pages/glass-curtain-wall-repair-arlington/          301!
+/pages/office-glass-alexandria                      /pages/office-glass-alexandria/                      301!
+/pages/storefront-glass-repair-arlington            /pages/storefront-glass-repair-arlington/            301!
+
 /*              /404.html       404

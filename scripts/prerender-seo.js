@@ -34,19 +34,38 @@ const sitemapPath = path.join(distDir, "sitemap.xml");
 const appJsxPath = path.join(root, "src", "App.jsx");
 const SITE = "https://commercialglassdoorwindowrepairservice.com";
 
-// Every route is written to disk as <route>/index.html (see writeFile below),
-// so Netlify's static-asset layer 301s a request for the bare path to the
-// trailing-slash form (standard directory-index behavior, not something our
-// own redirect rules control). Google indexes whichever URL it's pointed at
-// first, so every internal reference -- sitemap, canonical/og:url, JSON-LD,
-// and every rendered <a href> -- must use the trailing-slash form directly,
-// or Google just keeps re-discovering the pre-redirect URL and never
-// settles on one canonical ("Page with redirect" / duplicate-canonical in
-// Search Console). Idempotent and safe on absolute URLs, bare paths, "/",
-// and "/#fragment" anchor links (left alone -- same-page, not a route).
+// Every route is written to disk as <route>/index.html (see writeFile below).
+// Netlify's static-asset layer does NOT redirect a bare-path request there on
+// its own -- it serves the same file at both paths with 200 OK, confirmed by
+// GSC reporting a dozen pages indexed and earning impressions under both
+// forms. public/_redirects now carries explicit 301s for the known cases, but
+// that list can't cover every route Google might crawl without a slash
+// before it's ever requested with one, so every internal reference -- sitemap,
+// canonical/og:url, JSON-LD, and every rendered <a href> -- must use the
+// trailing-slash form directly, to avoid creating new bare-path discoveries
+// that would need their own redirect added. Idempotent and safe on absolute
+// URLs, bare paths, "/", and "/#fragment" anchor links (left alone -- same-page,
+// not a route).
 function withSlash(p) {
   if (!p || p.endsWith("/") || p.includes("#")) return p;
   return `${p}/`;
+}
+
+// Mirrors App.jsx's pickRotated/hashString exactly (see that file for why):
+// cross-link lists used to always take a list's first N entries, piling
+// inbound links onto whichever items sorted first and leaving later ones
+// (e.g. Fairfax among Alexandria, Annandale, Arlington...) with none. This
+// rotates each caller's starting offset by its own key instead, deterministically.
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function pickRotated(list, count, seedKey) {
+  if (list.length === 0) return [];
+  const n = Math.min(count, list.length);
+  const start = hashString(seedKey) % list.length;
+  return Array.from({ length: n }, (_, i) => list[(start + i) % list.length]);
 }
 
 if (!existsSync(templatePath)) {
@@ -235,8 +254,8 @@ function ctaSectionHtml(heading, body) {
 // crawlable information and JS replaces this markup on load regardless).
 
 function renderService(svc) {
-  const otherServices = ALL_SERVICES.filter(s => s.key !== svc.key).slice(0, 5);
-  const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
+  const otherServices = pickRotated(ALL_SERVICES.filter(s => s.key !== svc.key), 5, svc.key);
+  const featuredLocations = pickRotated(generatedByService[svc.key] || [], 6, svc.key);
   const category = serviceCategory(svc);
   const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
   // Residential services link out to the residential (Foggy City) area pages,
@@ -300,9 +319,9 @@ function renderService(svc) {
 }
 
 function renderCity(city) {
-  const featuredServices = (generatedByCity[city.key] || []).slice(0, 6);
+  const featuredServices = pickRotated(generatedByCity[city.key] || [], 6, city.key);
   const sameState = CITIES.filter(c => c.key !== city.key && c.state === city.state);
-  const nearbyCities = (sameState.length >= 4 ? sameState : CITIES.filter(c => c.key !== city.key)).slice(0, 8);
+  const nearbyCities = pickRotated(sameState.length >= 4 ? sameState : CITIES.filter(c => c.key !== city.key), 8, city.key);
   const crumbs = [{ label: "Home", to: "/" }, { label: "Service Areas", to: "/#service-areas" }, { label: `${city.name}, ${city.state}`, to: `/city/${city.key}` }];
   const body = `
     <div class="page-hero"><div class="container">
@@ -359,7 +378,7 @@ function renderCity(city) {
 function renderFoggyCity(city) {
   const services = ["Foggy window repair", "Broken window seal replacement", "Condensation between panes fix", "Double pane glass replacement", "Triple pane IGU replacement", "Low-E glass upgrade", "Residential window glass repair", "Insulated glass unit replacement"];
   const crumbs = [{ label: "Home", to: "/" }, { label: "Foggy Window Repair", to: "/foggy-window" }, { label: city.name, to: `/foggy-city/${city.key}` }];
-  const otherAreas = FOGGY_CITIES.filter(c => c.key !== city.key).slice(0, 8);
+  const otherAreas = pickRotated(FOGGY_CITIES.filter(c => c.key !== city.key), 8, city.key);
   const faq = city.faq || [];
   const faqHtml = faq.length > 0
     ? `<h2>${esc(city.name)} Foggy Window FAQ</h2>` + faq.map(f => `<div style="margin-bottom:16px"><h3 style="font-size:15px;color:#0F4C81;margin-bottom:4px">${esc(f.q)}</h3><p>${esc(f.a)}</p></div>`).join("")
@@ -571,7 +590,7 @@ function renderGeneratedPage(slug, entry) {
   const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
   const cityPath = withSlash(foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null);
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
-  const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
+  const otherLocations = pickRotated((svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug), 5, slug);
   const crumbs = [
     { label: "Home", to: "/" },
     ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
@@ -709,14 +728,17 @@ function injectHead(html, { title, description, canonicalPath, robots }) {
     out = out.replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${esc(description)}" />`);
   }
 
+  // The base template (index.html) already hardcodes a canonical tag for
+  // the homepage -- strip it unconditionally, or every other route ends up
+  // with two conflicting <link rel="canonical"> tags (a real, separate cause
+  // of "Google chose different canonical" in Search Console, independent of
+  // the trailing-slash issue this function's withSlash(canonicalPath)
+  // already fixes). Only reinsert one when the caller actually passed a
+  // canonicalPath -- the 404 page passes null on purpose (no single URL is
+  // canonical for an arbitrary unmatched path) and must end up with none,
+  // not silently inherit the homepage's.
+  out = out.replace(/\s*<link rel="canonical"[^>]*>/, "");
   if (canonicalPath) {
-    // The base template (index.html) already hardcodes a canonical tag for
-    // the homepage -- strip it first or every other route ends up with two
-    // conflicting <link rel="canonical"> tags (a real, separate cause of
-    // "Google chose different canonical" in Search Console, independent of
-    // the trailing-slash issue this function's withSlash(canonicalPath)
-    // already fixes).
-    out = out.replace(/\s*<link rel="canonical"[^>]*>/, "");
     out = out.replace("</head>", `  <link rel="canonical" href="${SITE}${canonicalPath}" />\n  <meta property="og:url" content="${SITE}${canonicalPath}" />\n  </head>`);
   }
 
