@@ -2,17 +2,41 @@ import { useState, useEffect } from "react";
 import { Routes, Route, Link as RouterLink, useNavigate, useParams, useLocation } from "react-router-dom";
 
 // Every route is prerendered to <route>/index.html (see scripts/prerender-seo.js),
-// so Netlify 301s a request for the bare path to the trailing-slash form
-// (standard directory-index behavior). A client-side nav to the bare path
-// would leave the address bar and useSEO's canonical tag disagreeing with
-// that redirect target, so every internal link goes through this thin
-// wrapper instead of react-router's Link directly -- one place normalizes
-// every `to`, present and future, rather than relying on every call site to
+// and this file's own canonical tag always declares the trailing-slash form.
+// Netlify does NOT redirect the bare path there on its own -- it just serves
+// the same index.html at both paths with 200 OK (confirmed: GSC had both
+// forms indexed and reporting impressions separately for a dozen pages; see
+// public/_redirects for the explicit 301s added for the known cases). A
+// client-side nav to the bare path would still leave the address bar and
+// useSEO's canonical tag disagreeing with each other even with those
+// redirects in place, so every internal link goes through this thin wrapper
+// instead of react-router's Link directly -- one place normalizes every
+// `to`, present and future, rather than relying on every call site to
 // remember the trailing slash. Idempotent and safe on an already-slashed
 // path, "/", and a same-page "/#fragment" anchor link (left alone).
 function withSlash(p) {
   if (!p || p.endsWith("/") || p.includes("#")) return p;
   return `${p}/`;
+}
+
+// Cross-link lists (related services, featured locations, nearby cities) used
+// to always take a list's first N entries, so whichever items sorted first
+// (alphabetically, by insertion order) accumulated most of the sitewide
+// inbound links while later entries -- e.g. Fairfax among Alexandria,
+// Annandale, Arlington... -- got none. pickRotated instead starts each
+// caller's slice at a position derived from its own key, so link equity
+// spreads across the whole list. Deterministic (same inputs -> same output
+// every build) so this stays reproducible between prerender-seo.js and here.
+function hashString(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function pickRotated(list, count, seedKey) {
+  if (list.length === 0) return [];
+  const n = Math.min(count, list.length);
+  const start = hashString(seedKey) % list.length;
+  return Array.from({ length: n }, (_, i) => list[(start + i) % list.length]);
 }
 function Link({ to, ...rest }) {
   return <RouterLink to={typeof to === "string" ? withSlash(to) : to} {...rest} />;
@@ -339,14 +363,15 @@ const CITIES = [
 ];
 
 const COMMERCIAL_SERVICES = [
-  { key: "storefront-glass", name: "Storefront Glass Repair", desc: "Fast repair and replacement of broken or damaged commercial storefront glass throughout Northern Virginia, Washington DC, and Maryland." },
-  { key: "commercial-door", name: "Commercial Door Repair", desc: "All-brands commercial door repair including pivots, closers, hinges, and full door replacement." },
+  { key: "storefront-glass", name: "Commercial Glass Repair", desc: "Fast commercial glass repair and replacement for broken or damaged storefront glass throughout Northern Virginia, Washington DC, and Maryland." },
+  { key: "commercial-door", name: "Commercial Door Repair", desc: "All-brands commercial door repair — hardware, closers, hinges, pivots, and full door replacement for any door material, including glass, aluminum, steel, and wood." },
+  { key: "commercial-glass-door-repair", name: "Commercial Glass Door Repair", desc: "Repair and replacement of cracked, shattered, or fogged commercial glass door panels — tempered, laminated, and insulated glass — across all commercial door types and brands." },
   { key: "emergency-boardup", name: "Emergency Board-Up", desc: "24/7 emergency glass board-up service for broken storefronts, vandalism, and accidents." },
   { key: "aluminum-storefront", name: "Aluminum Storefront Doors", desc: "Installation and repair of aluminum storefront door systems for retail and commercial properties." },
   { key: "door-closers", name: "Commercial Door Closers", desc: "Repair and replacement of all commercial door closer brands — LCN, Norton, Dorma, and more." },
   { key: "continuous-hinges", name: "Continuous Hinges", desc: "Installation of piano/continuous hinges for high-traffic commercial doors requiring heavy-duty hardware." },
   { key: "glass-walls", name: "Commercial Glass Walls", desc: "Full-height commercial glass wall systems for offices, lobbies, and retail environments." },
-  { key: "storefront-door-repair", name: "Storefront Door Repair", desc: "Same-day repair of damaged, misaligned, or broken storefront doors across Northern Virginia." },
+  { key: "storefront-door-repair", name: "Storefront Door Repair", desc: "Same-day repair of misaligned hardware, damaged frames, or broken storefront door systems — closers, pivots, and alignment — across Northern Virginia." },
   { key: "commercial-window-replacement", name: "Commercial Window Glass Replacement", desc: "Full-pane commercial window glass replacement for office buildings, retail properties, and multi-tenant commercial spaces." },
   { key: "office-glass", name: "Office Glass & Partition Repair", desc: "Repair and replacement of interior office glass partitions, glass doors, and conference room glazing." },
   { key: "tempered-glass", name: "Tempered Glass Repair & Replacement", desc: "Code-compliant tempered safety glass replacement for storefronts, doors, and commercial glazing that requires impact-resistant glass." },
@@ -1361,8 +1386,8 @@ function serviceCategory(svc) {
 }
 
 function ServicePage({ svc, setPage }) {
-  const otherServices = ALL_SERVICES.filter(s => s.key !== svc.key).slice(0, 5);
-  const featuredLocations = (generatedByService[svc.key] || []).slice(0, 6);
+  const otherServices = pickRotated(ALL_SERVICES.filter(s => s.key !== svc.key), 5, svc.key);
+  const featuredLocations = pickRotated(generatedByService[svc.key] || [], 6, svc.key);
   const category = serviceCategory(svc);
   const crumbs = [{ label: "Home", to: "/" }, { label: category.label, to: category.to }, { label: svc.name, to: `/service/${svc.key}` }];
   // Residential services link out to the residential (Foggy City) area pages,
@@ -1513,9 +1538,9 @@ function ServicePage({ svc, setPage }) {
 }
 
 function CityPage({ city, setPage }) {
-  const featuredServices = (generatedByCity[city.key] || []).slice(0, 6);
+  const featuredServices = pickRotated(generatedByCity[city.key] || [], 6, city.key);
   const sameState = CITIES.filter(c => c.key !== city.key && c.state === city.state);
-  const nearbyCities = (sameState.length >= 4 ? sameState : CITIES.filter(c => c.key !== city.key)).slice(0, 8);
+  const nearbyCities = pickRotated(sameState.length >= 4 ? sameState : CITIES.filter(c => c.key !== city.key), 8, city.key);
   const crumbs = [{ label: "Home", to: "/" }, { label: "Service Areas", to: "/#service-areas" }, { label: `${city.name}, ${city.state}`, to: `/city/${city.key}` }];
 
   useSEO({
@@ -2391,7 +2416,7 @@ function FoggyCityPage({ city, setPage }) {
               <p>Ready to get started? <Link to="/contact">Request a free quote</Link> for your {city.name} home.</p>
               <h2 style={{ marginTop: 28 }}>Other Areas Near {city.name}</h2>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 10 }}>
-                {FOGGY_CITIES.filter(c => c.key !== city.key).slice(0, 8).map(c => (
+                {pickRotated(FOGGY_CITIES.filter(c => c.key !== city.key), 8, city.key).map(c => (
                   <Link key={c.key} to={`/foggy-city/${c.key}`} style={{ background: "#F0F7FF", color: "#0F4C81", padding: "5px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, cursor: "pointer", border: "1px solid #c5dff8" }}>{c.name}</Link>
                 ))}
               </div>
@@ -2585,7 +2610,7 @@ function GeneratedPage({ entry, slug, setPage }) {
   const cityObj = foggyCityObj || CITIES.find(c => c.key === city);
   const cityPath = foggyCityObj ? `/foggy-city/${foggyCityObj.key}` : cityObj ? `/city/${cityObj.key}` : null;
   const emergencyService = COMMERCIAL_SERVICES.find(s => s.key === "emergency-boardup");
-  const otherLocations = (svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug).slice(0, 5);
+  const otherLocations = pickRotated((svc ? generatedByService[svc.key] : []).filter(p => p.slug !== slug), 5, slug);
   const crumbs = [
     { label: "Home", to: "/" },
     ...(svc ? [{ label: svc.name, to: `/service/${svc.key}` }] : []),
