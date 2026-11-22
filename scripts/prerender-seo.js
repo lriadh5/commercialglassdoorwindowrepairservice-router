@@ -134,11 +134,22 @@ function generatedPageTitle(rawTitle) {
   const withSuffix = `${raw} | ${COMPANY_SHORT}`;
   return withSuffix.length <= MAX_TITLE_LEN ? withSuffix : truncateTitle(raw);
 }
+// Joins segments with " | ", dropping from the end until it fits -- see
+// App.jsx's buildSegmentedTitle for the full rationale (truncateTitle's
+// mid-string cut was landing between segments, leaving a dangling "|" or
+// a brand name cut off after one word on most service/city titles).
+function buildSegmentedTitle(segments, maxLen = MAX_TITLE_LEN) {
+  for (let i = segments.length; i >= 1; i--) {
+    const candidate = segments.slice(0, i).join(" | ");
+    if (candidate.length <= maxLen) return candidate;
+  }
+  return truncateTitle(segments[0], maxLen);
+}
 function servicePageTitle(svcName) {
-  return truncateTitle(`${svcName} | Northern VA, DC & MD | ${COMPANY_SHORT}`);
+  return buildSegmentedTitle([svcName, "Northern VA, DC & MD", COMPANY_SHORT]);
 }
 function cityPageTitle(cityName, state) {
-  return truncateTitle(`Commercial Glass Repair in ${cityName}, ${state} | ${COMPANY_SHORT}`);
+  return buildSegmentedTitle([`Commercial Glass Repair in ${cityName}, ${state}`, COMPANY_SHORT]);
 }
 
 // --- Generated pages (src/data/pages/*.json) + the same cross-link index
